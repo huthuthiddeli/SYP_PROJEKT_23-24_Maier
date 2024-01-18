@@ -19,27 +19,9 @@
 */
 
 import Route from '@ioc:Adonis/Core/Route'
+import './routes/mBot'
+import './routes/DatabaseAPI'
 
 Route.get('/', async ({ view }) => {
   return view.render('welcome')
 })
-
-
-Route.get('/bot', async () => {
-  return JSON.stringify(new RBG(207, 86, 255));
-})
-
-
-class RBG{
-
-  g
-  r
-  b
-
-  constructor(r, g, b){
-    this.r = r;
-    this.g = g;
-    this.b = b;
-  }
-
-}
