@@ -25,3 +25,6 @@ build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 
 [C:/Users/User/Documents/Projekte/SYP_PROJEKT_23-24_Maier/Applikation/MBotSoftware/Views/MainWindow.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
+
+[C:/Users/User/Documents/Projekte/SYP_PROJEKT_23-24_Maier/Applikation/MBotSoftware/Views/MBotLandingView.axaml]
+build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MBotSoftware")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dc0293a90e0dbf2d71d568c74d0355f48f97c8fc")]
 [assembly: System.Reflection.AssemblyProductAttribute("MBotSoftware")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MBotSoftware")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
