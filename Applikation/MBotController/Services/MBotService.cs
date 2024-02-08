@@ -12,9 +12,9 @@ namespace MBotController.Services
         //TODO: Get MBots from server, otherwise use test data for debug purposes
         public IEnumerable<MBot> GetItems() => new[]
         {
-            new MBot("192.168.0.1"),
-            new MBot("192.168.0.2"),
-            new MBot("192.168.0.3"),
+            new MBot("192.168.0.1", 20),
+            new MBot("192.168.0.2", 10),
+            new MBot("192.168.0.3", 30),
         };
     }
 }

@@ -13,13 +13,9 @@ namespace MBotController.ViewModels
     {
         public List<MBot> MBots { get; set; }
 
-        public MBotLandingViewModel(IEnumerable<MBot> mBots) 
-        { 
-            using (HttpClient client = new HttpClient())
-            {
-                MBots = mBots.ToList();
-            }
+        public MBotLandingViewModel(IEnumerable<MBot> mBots)
+        {
+            MBots = mBots.ToList();
         }
-
     }
 }
