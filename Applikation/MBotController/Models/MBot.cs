@@ -14,6 +14,7 @@ namespace MBotController.Models
         public string IP {  get; set; }
         public string Name { get; set; }
         public int Velocity { get; set; } = 0;
+        //TODO: Fix Background Color
         public IBrush BackgroundColor { get; private set; }
 
         public MBot() 
