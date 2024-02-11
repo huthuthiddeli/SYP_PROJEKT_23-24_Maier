@@ -20,4 +20,4 @@ Goal of this project is to remote controll the **M-BOT**. For achiving this goal
 
 
 
-The second method we will use is **.NET Maui**. Coded by Dave
+The second method we will use is **Avalonia**. Coded by Dave
