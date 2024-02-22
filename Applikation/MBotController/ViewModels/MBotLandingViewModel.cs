@@ -13,7 +13,7 @@ namespace MBotController.ViewModels
     {
         public List<MBot> MBots { get; set; }
 
-        public MBotLandingViewModel(IEnumerable<MBot> mBots)
+        public MBotLandingViewModel(List<MBot> mBots)
         {
             MBots = mBots.ToList();
         }

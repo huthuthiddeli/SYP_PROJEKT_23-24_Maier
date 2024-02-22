@@ -1,4 +1,5 @@
-﻿using MBotController.Models;
+﻿using Avalonia.Controls;
+using MBotController.Models;
 using MBotController.Services;
 using System.Collections.Generic;
 
@@ -10,7 +11,6 @@ internal class MainViewModel : ViewModelBase
 
     public MainViewModel() 
     {
-        MBotService service = new();
-        MBots = new MBotLandingViewModel(service.GetItems());
+        MBots = new MBotLandingViewModel(MBotService.Instance.MBots);
     }
 }
