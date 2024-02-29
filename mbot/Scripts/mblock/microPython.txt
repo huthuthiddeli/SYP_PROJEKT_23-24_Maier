@@ -1,0 +1,14 @@
+https://makeblock-micropython-api.readthedocs.io/en/latest/index.html
+
+
+# API Documentation
+
+https://education.makeblock.com/help/category/mblock-python/mblock-python-editor-python-api-documentation-for-devices/mblock-python-editor-python-api-documentation-for-cyberpi/
+
+
+# Network
+# alternative way to connect to WLAN. more ESP32 style
+# sockets are also working.
+# no good documentation found instead of this
+
+https://education.makeblock.com/help/iteration-007/

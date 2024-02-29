@@ -1,0 +1,37 @@
+import usocket as socket
+
+# IP-Adresse und Port, auf dem der Server hören soll
+ip_address = '0.0.0.0'  # '0.0.0.0' bedeutet, dass der Server auf allen verfügbaren Schnittstellen lauscht
+port = 12345
+
+# Funktion zum Verarbeiten von eingehenden Verbindungen
+def handle_connection(client_socket):
+    # Hier kannst du die Logik für die Verarbeitung der Verbindung implementieren
+    request_data = client_socket.recv(1024)
+    print("Empfangene Daten:", request_data)
+
+    # Beispielantwort senden
+    response = b"Hello from MicroPython Server!"
+    client_socket.send(response)
+
+    # Verbindung schließen
+    client_socket.close()
+
+# Socket erstellen
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+# Socket an IP-Adresse und Port binden
+server_socket.bind((ip_address, port))
+
+# Server in den Listening-Modus versetzen
+server_socket.listen(1)  # 1 steht für die maximale Anzahl der Warteschlangenverbindungen
+
+print("Server lauscht auf {}:{}".format(ip_address, port))
+
+while True:
+    # Auf eingehende Verbindungen warten
+    client_socket, client_address = server_socket.accept()
+    print("Verbindung von:", client_address)
+
+    # Verbindung in einem separaten Thread oder Prozess verarbeiten
+    handle_connection(client_socket)
