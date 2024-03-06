@@ -7,12 +7,17 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MBotController.Models;
+using System.Net.Http;
+using System.Text.Json;
+using System.Net.Http.Json;
 
 namespace MBotController.Services
 {
     internal class MBotService
     {
         public static MBotService Instance { get; } = new MBotService();
+        private static string IP {  get; set; }
+        private static int Port { get; set; }
         private object _lock = new object();
         public List<MBot> MBots { get; set; } = new List<MBot>();
         //TODO: Get MBots from server, otherwise use test data for debug purposes
@@ -24,39 +29,57 @@ namespace MBotController.Services
 
         private void SetItems()
         {
-            this.MBots = new List<MBot>()
+            /*this.MBots = new List<MBot>()
             {
                 new MBot("192.168.0.1", 20),
                 new MBot("192.168.0.2", 10),
                 new MBot("192.168.0.3", 30)
-            };
+            };*/
 
-            /*UdpClient udpClient = new UdpClient();
-            udpClient.EnableBroadcast = true;
 
-            IPEndPoint serverEP = new IPEndPoint(IPAddress.Any, 3333);
-            udpClient.Client.Bind(serverEP);
-
-            IPEndPoint broadcastEP = new IPEndPoint(IPAddress.Parse("10.10.0.1"), 3333);
-
-            while (true)
+            UdpClient udpClient = new UdpClient(6543);
+            try
             {
-                string message = "Hello from client";
-                byte[] bytes = Encoding.ASCII.GetBytes(message);
+                // Sends a message to the host to which you have connected.
+                byte[] sendBytes = Encoding.ASCII.GetBytes("ACC");
 
-                udpClient.Send(bytes, bytes.Length, broadcastEP);
+                udpClient.Send(sendBytes, sendBytes.Length, IPAddress.Broadcast.ToString(), 5595);
 
-                Console.WriteLine("Broadcast sent: " + message);
+                //IPEndPoint object will allow us to read datagrams sent from any source.
+                IPEndPoint RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, 5595);
 
-                // Receive response from the server
-                byte[] responseData = udpClient.Receive(ref serverEP);
-                string responseMessage = Encoding.ASCII.GetString(responseData);
-                Console.WriteLine("Received response from server: " + responseMessage);
+                // Blocks until a message returns on this socket from a remote host.    
+                byte[] receiveBytes = udpClient.Receive(ref RemoteIpEndPoint);
+                string returnData = Encoding.ASCII.GetString(receiveBytes);
 
-                // Wait before sending another broadcast
-                Thread.Sleep(1000);
+                if (returnData == "ACC")
+                {
+                    //Success
+                    IP = RemoteIpEndPoint.Address.ToString();
+                    Port = RemoteIpEndPoint.Port;
+                } 
+                else
+                {
+                    //No success
+                }
             }
-            */
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+            finally
+            {
+                udpClient.Close();
+            }
+
+            HttpClient client = new HttpClient();
+            MBots.Add(client.GetFromJsonAsync<MBot>($"http://{IP}:8080/api/test").Result);
+            /*string json = client.GetStringAsync("http://10.10.0.67:8080/api/test").Result;
+
+            JsonSerializerOptions options = new JsonSerializerOptions();
+            options.PropertyNameCaseInsensitive = true;
+
+            this.MBots.Add(JsonSerializer.Deserialize<MBot>(json, options));*/
         }
     }
 }

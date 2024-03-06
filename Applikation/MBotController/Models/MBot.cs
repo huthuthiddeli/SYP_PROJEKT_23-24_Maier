@@ -1,4 +1,5 @@
 ﻿using Avalonia.Media;
+using Avalonia.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,9 +11,11 @@ namespace MBotController.Models
 {
     internal class MBot
     {
+        [JsonIgnore]
         public static int Count { get; set; } = 0;
         public int ID { get; set; }
         public string IP {  get; set; }
+        [JsonIgnore]
         public string Name { get; set; }
         public int Velocity { get; set; } = 0;
         //TODO: Fix Background Color
@@ -25,8 +28,10 @@ namespace MBotController.Models
             this.ID = Count;
             Count++;
 
-            Random random = new();
-            BackgroundColor = new SolidColorBrush(Color.FromRgb((byte)random.Next(256), (byte)random.Next(256), (byte)random.Next(256)));
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                BackgroundColor = new SolidColorBrush(Color.FromRgb((byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256)));
+            });
         }
 
         public MBot(string IP, int velocity)
