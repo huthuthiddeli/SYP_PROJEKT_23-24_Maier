@@ -16,7 +16,7 @@ class SensorData:
         self.shake = shake
         self.front_light_sensors = front_light_sensors
 
-    def get_dict(self):
+    def get_json(self):
         dict = {}
         dict["ultrasonic"] = self.ultrasonic
         dict["light"] = self.light
@@ -24,7 +24,7 @@ class SensorData:
         dict["angles"] = self.angles
         dict["shake"] = self.shake
         dict["front_light_sensors"] = self.front_light_sensors
-        return dict
+        return ujson.dumbs(dict)
      
     @staticmethod
     def read_sensor_data():
@@ -52,13 +52,10 @@ class SensorData:
         
 def connect_wlan(wifi_ssid, wifi_pw):
     cpi.network.config_sta(wifi_ssid, wifi_pw)
-    cpi.console.println("Connect to " + wifi_ssid)
-    time.sleep(2)
-    
+    cpi.console.println("Wlan connection...")
     # Connect to Wifi
     while True:
         b = cpi.network.is_connect()
-        cpi.console.println("Connection: " + str(b))
         if b == False:
             cpi.led.on(255,0, 0)
             time.sleep(2)
@@ -70,14 +67,14 @@ def connect_wlan(wifi_ssid, wifi_pw):
     sockaddr = cpi.network.get_ip()
     cpi.console.println(sockaddr)
     
-    gateway = cpi.network.get_gateway()
-    cpi.console.println(gateway)
+    time.sleep(5)
+    cpi.led.on(0, 0, 0)
     
 
 def find_server(broadcast_ip, broadcast_port, self_port, req_msg, ack_msg):
     # Create a UDP socket for sending broadcasts
     broadcast_socket = usocket.socket(usocket.AF_INET, usocket.SOCK_DGRAM)
-    broadcast_socket.connect((broadcast_ip, broadcast_port))
+    broadcast_socket.connect((BROADCAST_IP, BROADCAST_PORT))
     
     # Create a UDP socket for recv
     recv_socket = usocket.socket(usocket.AF_INET, usocket.SOCK_DGRAM)
@@ -85,20 +82,23 @@ def find_server(broadcast_ip, broadcast_port, self_port, req_msg, ack_msg):
     recv_socket.settimeout(5)
     
     # Send broadcast and connect to server
+    cpi.console.println("Searching server...")
+    cpi.led.on(255,0, 0)
     while True:
         broadcast_socket.sendall(b' '.join([req_msg, str(self_port).encode('utf-8')]))
-        cpi.console.println('Broadcast sent')
-        
         try:
             response_data, server_address = recv_socket.recvfrom(2048)
-            cpi.console.println('Response received:' + response_data.decode('utf-8'))
+            cpi.console.println('Server responded')
+            cpi.led.on(0, 255, 0)
             
             if response_data == ack_msg:
                 break
         except OSError as e:
             if e.args[0] == 110:  # errno 110: ETIMEDOUT
-                cpi.console.println('No response')
-        time.sleep(5) 
+                cpi.console.println('Searching server...')
+                cpi.led
+        time.sleep(5)
+        cpi.led.on(0, 0, 0)
         
     # Close UDP sockets
     recv_socket.close()
@@ -116,8 +116,7 @@ def connect_to_server(server_address):
 
 def post_data_coroutine(post_route):
     while not STOP_THREADS:
-        dict = SensorData.read_sensor_data().get_dict()
-        json = ujson.dumps(dict)
+        json = SensorData.read_sensor_data().get_json()
         urequests.post(post_route, data = json)
         cpi.console.print("Data sent...")
         time.sleep(0.5)
@@ -127,8 +126,13 @@ def receiving_coroutine(tcp_socket):
     global ANTI_SUICE_ON
     
     while not STOP_THREADS:
-        cpi.console.println("Hallo")
         data = tcp_socket.recv(1024)
+        
+        if not data:
+            cpi.console.println("Server disconnected")
+            cpi.led.on(255, 0, 0)
+            stop_coroutines()
+            
         if data == "SUI_ON":
             ANTI_SUICE_ON = True
         elif data == "SUI_OFF":
@@ -138,8 +142,18 @@ def receiving_coroutine(tcp_socket):
         elif data == "LINE_OFF":
             LINE_FOLLOW_ON = False
         elif not LINE_FOLLOW_ON:
-            move(data[0], data[1])
-        cpi.console.println(data)
+            try:
+                values_strip = data.strip("[]")
+                values = [int(num) for num in numbers_str.split(",")]
+                
+                if len(values) == 4:
+                    cpi.console.println("LED")
+                elif len(values) == 2:
+                    move(values[0], values[1])
+                else:
+                    cpi.console.println("Illegal values!")
+            except:
+                cpi.console.println("Illegal values!")
 
 
 def move(left, right):    
@@ -175,16 +189,23 @@ def start_coroutines(tcp_socket, post_route):
     global STOP_THREADS
     STOP_THREADS = False
     
-    try:
-        _thread.start_new_thread(post_data_coroutine, (post_route,))
-        _thread.start_new_thread(receiving_coroutine, (tcp_socket,))
-    except Exception as e:
-        cpi.console.println("Error starting coroutines:", e)
+    _thread.start_new_thread(post_data_coroutine, (post_route,))
+    _thread.start_new_thread(receiving_coroutine, (tcp_socket,))
 
 
 def stop_coroutines():
     global STOP_THREADS
     STOP_THREADS = True
+
+
+def START_MBOT():
+    stop_coroutines()
+    connect_wlan(WIFI_SSID, WIFI_PW)
+    SERVER_IP = find_server(BROADCAST_IP, BROADCAST_PORT, SELF_PORT, REQ_MSG, ACK_MSG)
+    cpi.console.println(str(SERVER_IP[0])+":"+str(SERVER_IP[1]))
+    POST_ROUTE = WEB_PROTOCOL+str(SERVER_IP[0])+":"+str(WEB_SERVER_PORT)+API_ROUTE
+    start_coroutines(connect_to_server(SERVER_IP), POST_ROUTE)
+    
 
 STOP_THREADS = False
 ANTI_SUICE_ON = False
@@ -203,9 +224,13 @@ WEB_SERVER_PORT = 8080
 WEB_PROTOCOL = "http://"
 API_ROUTE = "/api/mbot/Data"
 
-stop_coroutines()
-connect_wlan(WIFI_SSID, WIFI_PW)
-SERVER_IP = find_server(BROADCAST_IP, BROADCAST_PORT, SELF_PORT, REQ_MSG, ACK_MSG)
-cpi.console.println(str(SERVER_IP[0])+":"+str(SERVER_IP[1]))
-POST_ROUTE = WEB_PROTOCOL+str(SERVER_IP[0])+":"+str(WEB_SERVER_PORT)+API_ROUTE
-start_coroutines(connect_to_server(SERVER_IP), POST_ROUTE)
+while True:
+    if cpi.controller.is_press('a'):
+        start_msg = ""
+        if not STOP_THREADS:
+            start_msg += "Starting..."
+        else:
+            start_msg += "Restarting..."
+        cpi.console.println(start_msg)
+        time.sleep(5)
+        START_MBOT()
