@@ -18,7 +18,13 @@ namespace MBotController.Models
         [JsonIgnore]
         public string Name { get; set; }
         public int Velocity { get; set; } = 0;
-        //TODO: Fix Background Color
+        public double Ultrasonic { get; set; } = 0;
+        public List<int> Angles { get; set; } = new List<int>();
+        public int Sound { get; set; } = 0;
+        [JsonPropertyName("front_light_sensors")]
+        public List<int> LightSensors { get; set;} = new List<int>();
+        public int Shake { get; set; } = 0;
+        public int Light { get; set; } = 0;
         [JsonIgnore]
         public IBrush BackgroundColor { get; private set; }
 
@@ -28,13 +34,10 @@ namespace MBotController.Models
             this.ID = Count;
             Count++;
 
-            Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                BackgroundColor = new SolidColorBrush(Color.FromRgb((byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256)));
-            });
+            this.RandomColor();
         }
 
-        public MBot(string IP, int velocity)
+        public MBot(string IP, int velocity) : this()
         {
             this.IP = IP;
             this.Name = "MBot " + Count;
@@ -42,8 +45,35 @@ namespace MBotController.Models
             Count++;
             this.Velocity = velocity;
 
-            Random random = new();
-            BackgroundColor = new SolidColorBrush(Color.FromRgb((byte)random.Next(256), (byte)random.Next(256), (byte)random.Next(256)));
+            this.RandomColor();
+            //BackgroundColor = new SolidColorBrush(Color.FromRgb((byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256)));
+        }
+
+        public MBot(string ip, int velocity, double ultrasonic, List<int> angles, int sound, List<int> lightSensors, int shake, int light) : this(ip, velocity)
+        {
+            Ultrasonic = ultrasonic;
+            Angles = angles;
+            Sound = sound;
+            LightSensors = lightSensors;
+            Shake = shake;
+            Light = light;
+        }
+
+        public void RandomColor()
+        {
+            if (Dispatcher.UIThread.CheckAccess())
+            {
+                // Wenn ja, direkt das SolidColorBrush-Objekt erstellen
+                this.BackgroundColor = new SolidColorBrush(Color.FromRgb((byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256)));
+            }
+            else
+            {
+                // Andernfalls den Dispatcher verwenden, um den Code auf dem UI-Thread auszuführen
+                Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    this.BackgroundColor = new SolidColorBrush(Color.FromRgb((byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256)));
+                });
+            }
         }
     }
 }

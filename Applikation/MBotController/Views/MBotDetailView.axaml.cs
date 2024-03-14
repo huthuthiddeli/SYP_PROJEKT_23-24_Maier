@@ -16,7 +16,7 @@ internal partial class MBotDetailView : UserControl
 
         if (model is null)
         {
-            model = new MBotDetailViewModel(bot);
+            this.DataContext = new MBotDetailViewModel(bot);
         }
         else
         {
