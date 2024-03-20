@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.starter.Networking.BroadcastServer;
 import com.mongodb.starter.Networking.OpenTCPConnection;
 import com.mongodb.starter.dtos.MbotDTO;
+import com.mongodb.starter.models.Command;
 import com.mongodb.starter.models.MbotEntity;
 import com.mongodb.starter.services.MbotService;
 import org.slf4j.Logger;
@@ -31,32 +32,32 @@ public class MbotController {
 
     @PostMapping("/mbot")
     @ResponseStatus(HttpStatus.CREATED)
-    public @ResponseBody MbotDTO postCar(@RequestBody MbotDTO CarDTO) {
+    public @ResponseBody MbotDTO saveToDB(@RequestBody MbotDTO CarDTO) {
         return MbotService.save(CarDTO);
     }
 
     @GetMapping("/mbots")
     @ResponseStatus(HttpStatus.OK)
-    public @ResponseBody List<MbotDTO> getCars() {
+    public @ResponseBody List<MbotDTO> getAllDB() {
         return MbotService.findAll();
     }
 
     @PostMapping("/mbot/command")
     @ResponseStatus(HttpStatus.CREATED)
-    public @ResponseBody String postCommands(@RequestParam String command, @RequestParam String socket) throws IOException {
+    public @ResponseBody String postCommands(@RequestBody Command command) throws IOException {
+        openTCPConnection.connectToMbot();
 
-        return "";
+        return openTCPConnection.sendPackageToMbot(command);
     }
 
     @PostMapping("/mbot/Data")
     @ResponseStatus(HttpStatus.CREATED)
-    public @ResponseBody void postData(@RequestBody String item){
-        try{
-            if(openTCPConnection.getSocket() != null && openTCPConnection.getSocket().isConnected()){
-                openTCPConnection.connectTOClient();
-            }
+    public @ResponseBody void postData(@RequestBody MbotDTO item){
 
-            MbotEntity entity = mapper.readValue(item, MbotEntity.class);
+        try{
+            openTCPConnection.connectTOClient();
+
+            MbotEntity entity = item.toMbotEntity();
 
             openTCPConnection.sendPackageToClient(entity);
         }catch (IllegalArgumentException e){
@@ -71,10 +72,18 @@ public class MbotController {
     }
 
 
-    @GetMapping("/mbot/commandQueue")
+    @PostMapping("/mbot/commandQueue")
     @ResponseStatus(HttpStatus.OK)
-    public @ResponseBody String getCommandQueue(){
-        return  "hello";    //BroadcastServer.sockets.toString();
+    public @ResponseBody String getCommandQueue(@RequestBody Command command) throws IOException {
+        if(!openTCPConnection.connectToMbot()){
+           return "Error!";
+        }
+
+        if(openTCPConnection.sendPackageToMbot(command) == null){
+            return "Error";
+        }
+
+        return "Worked!";
     }
 
     @GetMapping("/car/{id}")
