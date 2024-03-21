@@ -35,16 +35,16 @@
 
 			<Border Grid.Column="3" Grid.ColumnSpan="2" Grid.Row="0" BorderBrush="Black" CornerRadius="15" BorderThickness="3">
 				<Grid RowDefinitions="*" ColumnDefinitions="*,*,*,*,*,*,*,*,*,*">
-					<Label Content="Test"/>
-					<Label Content="Test"/>
-					<Label Content="Test"/>
-					<Label Content="Test"/>
-					<Label Content="Test"/>
-					<Label Content="Test"/>
-					<Label Content="Test"/>
-					<Label Content="Test"/>
-					<Label Content="Test"/>
-					<Label Content="Test"/>
+					<Label Content="Test" Grid.Column="0"/>
+					<Label Content="Test" Grid.Column="1"/>
+					<Label Content="Test" Grid.Column="2"/>
+					<Label Content="Test" Grid.Column="3"/>
+					<Label Content="Test" Grid.Column="4"/>
+					<Label Content="Test" Grid.Column="5"/>
+					<Label Content="Test" Grid.Column="6"/>
+					<Label Content="Test" Grid.Column="7"/>
+					<Label Content="Test" Grid.Column="8"/>
+					<Label Content="Test" Grid.Column="9"/>
 				</Grid>
 			</Border>
 
@@ -53,7 +53,7 @@
 
 		<!--joystick placeholder-->
 		<Border Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" BorderBrush="Black" CornerRadius="15" BorderThickness="3">
-			
+			<Button Content="Send Data" Click="sendData"/>
 		</Border>
 
 		<Border Grid.Column="1" Grid.Row="1" BorderBrush="Black" CornerRadius="15" BorderThickness="3" Padding="10">
@@ -75,8 +75,8 @@
 		<Border Grid.Column="1" Grid.Row="2" BorderBrush="Black" CornerRadius="15" BorderThickness="3">
 			<Grid RowDefinitions="*,9*" ColumnDefinitions="*,*">
 				<StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
-					<Label Content="I1"/>
-					<Label Content="I2"/>
+					<Label Content="Option1"/>
+					<Label Content="Óption2"/>
 				</StackPanel>
 				
 			</Grid>

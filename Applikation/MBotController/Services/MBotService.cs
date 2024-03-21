@@ -11,6 +11,8 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Net.Http.Json;
 using System.Diagnostics;
+using Avalonia.Controls;
+using System.Net.Http.Headers;
 
 namespace MBotController.Services
 {
@@ -30,14 +32,14 @@ namespace MBotController.Services
 
         private void SetItems()
         {
-            this.MBots = new List<MBot>()
+            /*this.MBots = new List<MBot>()
             {
                 new MBot("192.168.0.1", 20, 2.99, new List<int>(){1,2,3,4 }, 20, new List<int>(){4,3,2,1 }, 55, 22),
                 new MBot("192.168.0.2", 10, 3.99, new List<int>(){1,2,3,4 }, 21, new List<int>(){4,3,2,1 }, 56, 23),
                 new MBot("192.168.0.3", 30, 5.99, new List<int>(){1,2,3,4 }, 22, new List<int>(){4,3,2,1 }, 57, 24)
-            };
+            };*/
 
-            /*UdpClient udpClient = new UdpClient(6543);
+            UdpClient udpClient = new UdpClient(6543);
             try
             {
                 // Sends a message to the host to which you have connected.
@@ -77,7 +79,7 @@ namespace MBotController.Services
 
             MBots.ForEach( mbot => mbot.RandomColor() );
 
-            try
+            /*try
             {
                 string serverIP = IP;
                 int serverPort =  Port;
@@ -95,18 +97,14 @@ namespace MBotController.Services
                 string message = "Hallo, Server!";
                 byte[] data = Encoding.ASCII.GetBytes(message);
                 stream.Write(data, 0, data.Length);
-
-                Console.ReadLine(); // Halte die Anwendung offen, damit der Event Handler weiterhin Daten empfangen kann
-
-                socket.Close();
             }
             catch (Exception e)
             {
-                Console.WriteLine("Fehler: " + e.ToString());
+
             }*/
         }
 
-        private void OnDataReceived(IAsyncResult ar)
+        private async void OnDataReceived(IAsyncResult ar)
         {
             StateObject state = (StateObject)ar.AsyncState;
             NetworkStream stream = state.Stream;
@@ -119,6 +117,22 @@ namespace MBotController.Services
         {
             public byte[] Buffer { get; set; }
             public NetworkStream Stream { get; set; }
+        }
+
+        public async void receiveData()
+        {
+
+        }
+
+        public static async Task<string> sendCommand(Command command)
+        {
+            HttpClient client = new HttpClient();
+
+            string json = JsonSerializer.Serialize(command);
+            HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
+            var res = await client.PostAsync($"http://{IP}:8080/api/mbot/commandQueue", content);
+
+            return res.Content.ToString();
         }
     }
 }
