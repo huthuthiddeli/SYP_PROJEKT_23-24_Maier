@@ -2,34 +2,37 @@ package com.mongodb.starter.models;
 
 import org.bson.types.ObjectId;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class MbotEntity {
     private float ultrasonic;
-    private int[] angles;
+    private ArrayList<Integer> angles;
     private int sound;
-    private int[] front_light_sensors;
+    private ArrayList<Integer> front_light_sensors;
     private int shake;
     private int light;
     private ObjectId id;
 
     public MbotEntity(){}
 
-    public MbotEntity(float ultrasonic, int[] angles, int sound, int[] front_light_sensors, int shake,
+    public MbotEntity(float ultrasonic, ArrayList<Integer> angle, int sound, ArrayList<Integer> front_light_sensors, int shake,
                       int light){
         this.ultrasonic = ultrasonic;
-        this.angles = angles;
+        this.angles = angle;
         this.sound = sound;
         this.front_light_sensors = front_light_sensors;
         this.shake = shake;
         this.light = light;
     }
 
-    public MbotEntity(float ultrasonic, int[] angles, int sound, int[] front_light_sensors, int shake,
+    public MbotEntity(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> front_light_sensors, int shake,
                       int light, ObjectId id) {
         this.ultrasonic = ultrasonic;
-        this.angles = angles;
+        this.angles = front_light_sensors;
         this.sound = sound;
         this.front_light_sensors = front_light_sensors;
         this.shake = shake;
@@ -46,11 +49,11 @@ public class MbotEntity {
         return this;
     }
 
-    public int[] getAngles() {
+    public ArrayList<Integer> getAngles() {
         return angles;
     }
 
-    public MbotEntity setAngles(int[] angles) {
+    public MbotEntity setAngles(ArrayList<Integer> angles) {
         this.angles = angles;
         return this;
     }
@@ -73,11 +76,11 @@ public class MbotEntity {
         return this;
     }
 
-    public int[] getFront_light_sensors() {
+    public ArrayList<Integer> getFront_light_sensors() {
         return front_light_sensors;
     }
 
-    public MbotEntity setFront_light_sensors(int[] front_light_sensors) {
+    public MbotEntity setFront_light_sensors(ArrayList<Integer> front_light_sensors) {
         this.front_light_sensors = front_light_sensors;
         return this;
     }
@@ -110,8 +113,8 @@ public class MbotEntity {
                 //maxSpeedKmH, MbotEntity.maxSpeedKmH);
 
         return ultrasonic == MbotEntity.ultrasonic && shake == MbotEntity.shake && light == MbotEntity.light &&
-                Arrays.equals(front_light_sensors, MbotEntity.front_light_sensors) && sound == MbotEntity.sound &&
-                Arrays.equals(angles, MbotEntity.angles);
+                front_light_sensors.equals(MbotEntity.front_light_sensors) && sound == MbotEntity.sound &&
+                angles.equals(MbotEntity.angles);
     }
 
     @Override
@@ -123,9 +126,9 @@ public class MbotEntity {
     public String toString() {
         return "MbotDataEntity{" +
                 "ultrasonic=" + ultrasonic +
-                ", angles=" + Arrays.toString(angles) +
+                ", angles=" + angles.toString() +
                 ", sound=" + sound +
-                ", front_light_sensors=" + Arrays.toString(front_light_sensors) +
+                ", front_light_sensors=" + front_light_sensors.toString() +
                 ", shake=" + shake +
                 ", light=" + light +
                 '}';

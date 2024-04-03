@@ -12,7 +12,7 @@ import java.util.HashMap;
 
 public class BroadcastServer {
     private static String clientSocket;
-    private static ArrayList<String> mbotSockets = new ArrayList<>();
+    private static ArrayList<InetAddress> mbotSockets = new ArrayList<>();
 
 
     private static Logger LOGGER = LoggerFactory.getLogger(BroadcastServer.class);
@@ -26,7 +26,7 @@ public class BroadcastServer {
         try {
             // Create a socket to listen for broadcasts UDP
             DatagramSocket socket = new DatagramSocket(port);
-            LOGGER.info("Listening for broadcast messages on port " + port);
+            LOGGER.info("[BROADCAST]\tListening for broadcast messages on port " + port);
 
             while (true) {
                 // Create a buffer to store incoming data
@@ -46,7 +46,7 @@ public class BroadcastServer {
                 int senderPort = packet.getPort();
 
                 // Print the received message and sender's information
-                LOGGER.info("Received message from " + senderAddress + ":" + senderPort + " - " + receivedMessage);
+                LOGGER.info("[BROADCAST]\tReceived message from " + senderAddress + ":" + senderPort + " - " + receivedMessage);
 
 
                 if (receivedMessage.trim().equals("ACM 6000")){
@@ -54,8 +54,8 @@ public class BroadcastServer {
                     byte[] responseData = responseMessage.getBytes(StandardCharsets.UTF_8);
                     DatagramPacket responsePacket = new DatagramPacket(responseData, responseData.length, senderAddress, 6000);
                     socket.send(responsePacket);
-                    LOGGER.info("Response: " + senderAddress + ":" + senderPort + " - " + responseMessage);
-                    mbotSockets.add(senderAddress + ":" + "6000");
+                    LOGGER.info("[BROADCAST]\tResponse: " + senderAddress + ":" + senderPort + " - " + responseMessage);
+                    mbotSockets.add(senderAddress);
                 }
 
                 if(receivedMessage.trim().equals("ACC")){
@@ -63,15 +63,15 @@ public class BroadcastServer {
                     byte[] responseData = responseMessage.getBytes(StandardCharsets.UTF_8);
                     DatagramPacket responsePacket = new DatagramPacket(responseData, responseData.length, senderAddress, senderPort);
                     socket.send(responsePacket);
-                    LOGGER.info("Response: " + senderAddress + ":" + senderPort + " - " + responseMessage);
+                    LOGGER.info("[BROADCAST]\tResponse: " + senderAddress + ":" + senderPort + " - " + responseMessage);
                     clientSocket = senderAddress + ":" + senderPort;
                 }
             }
         } catch (IOException e) {
-            System.err.println("Error: " + e.getMessage());
+           LOGGER.error("[BROADCAST]\tError: " + e.getMessage());
             e.printStackTrace();
         }catch(IllegalArgumentException e){
-            System.err.println(e.getMessage());
+           LOGGER.error(e.getMessage());
             e.printStackTrace();
         }
     }
@@ -80,7 +80,7 @@ public class BroadcastServer {
         return clientSocket;
     }
 
-    public static ArrayList<String> getMbotSockets(){
+    public static ArrayList<InetAddress> getMbotSockets(){
         return mbotSockets;
     }
 }

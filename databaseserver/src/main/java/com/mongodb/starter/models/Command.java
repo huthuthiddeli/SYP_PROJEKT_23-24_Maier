@@ -1,5 +1,7 @@
 package com.mongodb.starter.models;
 
+import java.net.InetAddress;
+
 public class Command {
     private int id;
     private String name;
@@ -25,6 +27,7 @@ public class Command {
         return "Command{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
+                ", socket='" + socket +'\'' +
                 '}';
     }
 
@@ -40,7 +43,7 @@ public class Command {
         return socket;
     }
 
-    public void setSocket(String socket) {
+    public void setSocket(String  socket) {
         this.socket = socket;
     }
 }
