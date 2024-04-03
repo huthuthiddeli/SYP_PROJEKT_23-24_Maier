@@ -6,16 +6,17 @@ import urequests
 import ujson
 import os
 import _thread
-import sys
+import select
 
 class SensorData:
-    def __init__(self, ultrasonic, light, sound, angles, shake, front_light_sensors):
+    def __init__(self, ultrasonic, light, sound, angles, shake, front_light_sensors, IP):
         self.ultrasonic = ultrasonic
         self.light = light
         self.sound = sound
         self.angles = angles
         self.shake = shake
         self.front_light_sensors = front_light_sensors
+        self.IP = IP
 
     def get_json(self):
         dict = {}
@@ -25,6 +26,7 @@ class SensorData:
         dict["angles"] = self.angles
         dict["shake"] = self.shake
         dict["front_light_sensors"] = self.front_light_sensors
+        dict["IP"] = self.IP
         return ujson.dumps(dict)
      
     @staticmethod
@@ -39,7 +41,8 @@ class SensorData:
             cpi.quad_rgb_sensor.get_gray('l1', index = 1),
             cpi.quad_rgb_sensor.get_gray('r1', index = 1),
             cpi.quad_rgb_sensor.get_gray('r2', index = 1)
-        ])
+        ],
+        cpi.network.get_ip())
     
     @staticmethod
     def read_front_light_sensors():
@@ -52,6 +55,9 @@ class SensorData:
         
         
 def connect_wlan(wifi_ssid, wifi_pw):
+    global TRY_CONNECT
+    TRY_CONNECT = False
+    
     cpi.network.config_sta(wifi_ssid, wifi_pw)
     cpi.console.println("Wlan connection...")
     # Connect to Wifi
@@ -73,12 +79,16 @@ def connect_wlan(wifi_ssid, wifi_pw):
     
 
 def find_server(broadcast_ip, broadcast_port, self_port, req_msg, ack_msg):
+    global TRY_CONNECT
+    TRY_CONNECT = False
+    
     # Create a UDP socket for sending broadcasts
     broadcast_socket = usocket.socket(usocket.AF_INET, usocket.SOCK_DGRAM)
     broadcast_socket.connect((BROADCAST_IP, BROADCAST_PORT))
     
     # Create a UDP socket for recv
     recv_socket = usocket.socket(usocket.AF_INET, usocket.SOCK_DGRAM)
+        
     recv_socket.bind(('', self_port))
     recv_socket.settimeout(5)
     
@@ -111,125 +121,121 @@ def find_server(broadcast_ip, broadcast_port, self_port, req_msg, ack_msg):
     return server_address
     
     
-def connect_to_server(server_address):
-    # Create UDP socket and connect to server
-    tcp_socket = usocket.socket(usocket.AF_INET, usocket.SOCK_DGRAM)
-    tcp_socket.connect(server_address)
-    cpi.console.println('Connected to Server')
-    return tcp_socket
-
-
-def post_data_coroutine(post_route):
-    global POST_THREAD_STOPPED
+def tcp_connect_server(server_socket):
+    global TRY_CONNECT
+    TRY_CONNECT = False
     
-    while not STOP_THREADS:
-        json = SensorData.read_sensor_data().get_json()
-        urequests.post(post_route, data = json)
-        time.sleep(0.5)
-    POST_THREAD_STOPPED = True
-        
-        
-def receiving_coroutine(tcp_socket):
+    recv_socket = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
+
+    cpi.console.println("Server connection...")
+    while True:
+        try:
+            recv_socket.connect(server_socket)
+            time.sleep(2)
+            if recv_socket:
+                cpi.console.println("Connected!")
+                break
+        except OSError as e:
+            cpi.console.println("Server connection...")
+    return recv_socket
+    
+
+# sending data via http post + receiving commands via tcp socket instead of 2 sockets -> no threading needed
+def post_receive_data(server_socket, post_route, post_header):
     global ANTI_SUICE_ON
-    global RECEIVE_THREAD_STOPPED
+    ANTI_SUICE_ON = False
     
-    while not STOP_THREADS:
-        data = tcp_socket.recv(1024)
-        
-        if not data:
-            cpi.console.println("Server disconnected")
-            cpi.led.on(255, 0, 0)
-            stop_coroutines()
-            
-        if data == "SUI_ON":
-            ANTI_SUICE_ON = True
-        elif data == "SUI_OFF":
-            ANTI_SUICE_ON = False
-        elif data == "LINE_ON":
-            LINE_FOLLOW_ON = True
-        elif data == "LINE_OFF":
-            LINE_FOLLOW_ON = False
-        elif not LINE_FOLLOW_ON:
-            try:
-                values_strip = data.strip("[]")
-                values = [int(num) for num in values_strip.split(",")]
-                
-                if len(values) == 4:
-                    cpi.console.println("LED")
-                elif len(values) == 2:
-                    move(values[0], values[1])
-                else:
-                    cpi.console.println("Illegal values!")
-            except:
-                cpi.console.println("Illegal values!")
-                
-    RECEIVE_THREAD_STOPPED = True
-    
+    global TRY_CONNECT
+    TRY_CONNECT = False
 
-def move(left, right):    
-    if LINE_FOLLOW_ON:
-        cpi.mbot2.drive_power(50, -50) #forward 
-
+    recv_socket = tcp_connect_server(server_socket)
     while True:
         if ANTI_SUICE_ON:
-            if cpi.ultrasonic2.get(index=1) < 15:
-                cpi.mbot2.EM_stop(port="all")
-        elif LINE_FOLLOW_ON:
-            sensors = SensorData.read_front_light_sensors()
+            check_suicide()
             
-            if sensors[0] < 50 and sensors[1] < 50: 
-                cpi.mbot2.drive_power(20, -20) #straight ahead 
-                cpi.led.on(255,0,0,id=2) 
-                cpi.led.on(255,0,0,id=4) 
-                #cpi.console.println('straight')
-            elif sensors[0] < 50: 
-                cpi.mbot2.drive_power(5, -20) #turn left 
-                cpi.led.on(255,0,0,id=2) 
-                cpi.console.println('left')
-            elif sensors[1] < 50: 
-                    cpi.mbot2.drive_power(20, -5) #turn right 
-                    cpi.led.on(255,0,0,id=4) 
-                    cpi.console.println('right')
-            else: cpi.led.on(0,255,0)
-        else:
-            cpi.mbot2.drive_power(left, right)
+        try:
+            json = SensorData.read_sensor_data().get_json()
+            urequests.post(post_route, data = json.encode('UTF-8'), headers = post_header)
+
+            readable, _, _ = select.select([recv_socket], [], [], 0.1)  # Warte maximal 1/10 Sekunde
+            if readable:
+                data = recv_socket.recv(1024)
+                data = data.decode()
+                cpi.console.println(data)
+                
+                if data:
+                    if data == "ANTISUICIDE_ON":
+                        ANTI_SUICE_ON = True
+                    elif data == "ANTISUICIDE_OFF":
+                        ANTI_SUICE_ON = False
+                    elif data.split(":")[0] == "LED":
+                        rgb_values = data.split(":")[1]
+                        set_leds(int(rgb_values.split(";")[0]), int(rgb_values.split(";")[0]), int(rgb_values.split(";")[0]))
+                    else:
+                        left = int(data.split(';')[0])
+                        right = int(data.split(';')[1])
+                        
+                        if ANTI_SUICE_ON:
+                            if left < 0 and right < 0:
+                                move(left, right)
+                        else:
+                            move(left, right)
+        except OSError as e:
+            if e.args[0] == 104 or e.args[0] == 32 or e.args[0] == 113:
+                stop_motors()
+                cpi.console.println("Server disconnected\n")
+                time.sleep(2)
+                TRY_CONNECT = True
+                break
+            else:
+                cpi.console.println(e)
+                break
+        except ValueError:
+            stop_motors()
+            cpi.console.println("Invalid command\n")
+        except IndexError:
+            stop_motors()
+            cpi.console.println("Invalid command\n")
+        except Exception as e:
+            cpi.console.println(e)
+    recv_socket.close()
+    #test if latency is distrubing
+    
             
-
-def start_coroutines(tcp_socket, post_route):
-    global STOP_THREADS
-    STOP_THREADS = False
+def move(left, right):
+    stop_motors()
+    cpi.mbot2.drive_power(left, right)
     
-    _thread.start_new_thread(post_data_coroutine, (post_route,))
-    _thread.start_new_thread(receiving_coroutine, (tcp_socket,))
     
-    POST_THREAD_STOPPED = False
-    RECEIVE_THREAD_STOPPED = False
-
-
-def stop_coroutines():
-    global STOP_THREADS
-    global POST_THREAD_STOPPED
-    global RECEIVE_THREAD_STOPPED
-
-    STOP_THREADS = True
+def check_suicide():
+    if SensorData.read_sensor_data().ultrasonic < 15:
+        stop_motors()
     
-    while not POST_THREAD_STOPPED and not RECEIVE_THREAD_STOPPED:
-        time.sleep(0.1)
+
+def stop_motors():
+    cpi.mbot2.EM_stop(port="all")
+    
+
+def set_leds(r,g,b):
+    cpi.led.on(r,g,b)
         
 
 def START_MBOT():
-    stop_coroutines()
-    connect_wlan(WIFI_SSID, WIFI_PW)
+    if not cpi.network.is_connect:
+        connect_wlan(WIFI_SSID, WIFI_PW)
     SERVER_IP = find_server(BROADCAST_IP, BROADCAST_PORT, SELF_PORT, REQ_MSG, ACK_MSG)
     cpi.console.println(str(SERVER_IP[0])+":"+str(SERVER_IP[1]))
     POST_ROUTE = WEB_PROTOCOL+str(SERVER_IP[0])+":"+str(WEB_SERVER_PORT)+API_ROUTE
-    start_coroutines(connect_to_server(SERVER_IP), POST_ROUTE)
-    time.sleep(10)
-    stop_coroutines()
+    post_receive_data((SERVER_IP[0], TCP_PORT), POST_ROUTE, POST_HEADER)
 
-STOP_THREADS = False
-POST_THREAD_STOPPED = True
-RECEIVE_THREAD_STOPPED = True
+def try_connect():
+    while True:
+        if TRY_CONNECT:
+            START_MBOT()
+        time.sleep(5)
+
+# ---------- CONFIG ---------- #
+TRY_CONNECT = True
 ANTI_SUICE_ON = False
 LINE_FOLLOW_ON = False
 
@@ -238,13 +244,18 @@ WIFI_PW = "joh12345"
 
 BROADCAST_IP = "255.255.255.255"
 BROADCAST_PORT = 5595
+TCP_PORT = 5000
 SELF_PORT = 6000
 REQ_MSG = b"ACM"
 ACK_MSG = b"ACM"
 
 WEB_SERVER_PORT = 8080
 WEB_PROTOCOL = "http://"
+POST_HEADER = {'Content-type': 'application/json'}
 API_ROUTE = "/api/mbot/Data"
 
 # Implement start event handler on btn press 'a' here:
-START_MBOT()
+_thread.start_new_thread(try_connect, ())
+
+
+# TEST IF THREADING IS NEEDED!!!!!!!!!!!!!!!!
