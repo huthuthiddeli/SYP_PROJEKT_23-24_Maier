@@ -2,8 +2,7 @@ package com.mongodb.starter.controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.starter.Networking.BroadcastServer;
-import com.mongodb.starter.Networking.OpenTCPConnection;
+import com.mongodb.starter.Networking.Server;
 import com.mongodb.starter.dtos.MbotDTO;
 import com.mongodb.starter.models.Command;
 import com.mongodb.starter.models.MbotEntity;
@@ -14,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -23,17 +24,24 @@ public class MbotController {
     public final static Logger LOGGER = LoggerFactory.getLogger(MbotController.class);
     private final MbotService MbotService;
     private final ObjectMapper mapper = new ObjectMapper();
-    private OpenTCPConnection openTCPConnection = new OpenTCPConnection();
+    private final Server server = Server.getServer();
 
     public MbotController(MbotService mbotService) {
 
         this.MbotService = mbotService;
     }
 
+    /**
+     * <p> Creates an entry in the mongoDB </p>
+     *
+     *
+     * @param mbotDTO Sensordata object
+     * @return If successfull return the given Object otherwise null
+     */
     @PostMapping("/mbot")
     @ResponseStatus(HttpStatus.CREATED)
-    public @ResponseBody MbotDTO saveToDB(@RequestBody MbotDTO CarDTO) {
-        return MbotService.save(CarDTO);
+    public @ResponseBody MbotDTO saveToDB(@RequestBody MbotDTO mbotDTO) {
+        return MbotService.save(mbotDTO);
     }
 
     @GetMapping("/mbots")
@@ -45,56 +53,52 @@ public class MbotController {
     @PostMapping("/mbot/command")
     @ResponseStatus(HttpStatus.CREATED)
     public @ResponseBody String postCommands(@RequestBody Command command) throws IOException {
-        openTCPConnection.connectToMbot();
 
-        return openTCPConnection.sendPackageToMbot(command);
+        return "";
     }
 
     @PostMapping("/mbot/Data")
-    @ResponseStatus(HttpStatus.CREATED)
-    public @ResponseBody void postData(@RequestBody MbotDTO item){
+    @ResponseStatus(HttpStatus.OK)
+    public @ResponseBody void postData(@RequestBody MbotDTO item) throws JsonProcessingException, IOException {
+        LOGGER.debug(mapper.writeValueAsString(item));
 
         try{
-            openTCPConnection.connectTOClient();
-
             MbotEntity entity = item.toMbotEntity();
-
-            openTCPConnection.sendPackageToClient(entity);
         }catch (IllegalArgumentException e){
             LOGGER.error(e.getMessage());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
-
-        //openTCPConnection.connectToClient();
-
-
     }
 
 
     @PostMapping("/mbot/commandQueue")
     @ResponseStatus(HttpStatus.OK)
     public @ResponseBody String getCommandQueue(@RequestBody Command command) throws IOException {
-        if(!openTCPConnection.connectToMbot()){
-           return "Error!";
+
+
+        try{
+            if(server.sendCommandToClient(command)){
+                return "Worked!";
+            }
+        }catch (Exception ex){
+            LOGGER.error(ex.getMessage());
+            LOGGER.error(ex.getCause().getMessage());
         }
 
-        if(openTCPConnection.sendPackageToMbot(command) == null){
-            return "Error";
-        }
 
-        return "Worked!";
+
+
+        return "Error!";
     }
 
-    @GetMapping("/car/{id}")
+    @GetMapping("/mbot/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public @ResponseBody MbotDTO getCar(@PathVariable String id) {
+    public @ResponseBody MbotDTO getMbot(@PathVariable String id) {
         MbotDTO CarDTO = MbotService.findOne(id);
         if (CarDTO == null) return null;
         return CarDTO;
     }
 
-    @GetMapping("cars/{ids}")
+    @GetMapping("/mbot/{ids}")
     @ResponseStatus(HttpStatus.OK)
     public List<MbotDTO> getCars(@PathVariable String ids) {
         List<String> listIds = List.of(ids.split(","));
@@ -114,7 +118,9 @@ public class MbotController {
     @GetMapping("test")
     @ResponseStatus(HttpStatus.OK)
     public @ResponseBody String item() throws JsonProcessingException {
-        MbotEntity m = new MbotEntity(2.5f, new int[]{1,2,3}, 3, new int[]{1,2,3,4}, 95, 22);
+        MbotEntity m = new MbotEntity(2.5f, new ArrayList<Integer>(Arrays.asList(1,2,3,6,8,9,99)), 3,
+                new ArrayList<Integer>(Arrays.asList(1,2,3,4,6))
+                , 95, 22);
 
         return mapper.writeValueAsString(m);
     }

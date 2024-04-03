@@ -1,6 +1,7 @@
 package com.mongodb.starter;
 
 import com.mongodb.starter.Networking.BroadcastServer;
+import com.mongodb.starter.Networking.Server;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -8,7 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class ApplicationStarter {
     public static void main(String[] args) {
 
-        Thread newThread = new Thread(() ->{
+        Thread broadcast = new Thread(() ->{
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
@@ -17,7 +18,18 @@ public class ApplicationStarter {
             BroadcastServer.RUN();
         });
 
-        newThread.start();
+        Thread server = new Thread(() ->{
+            try{
+                Thread.sleep(2000);
+            }catch (InterruptedException ex){
+                throw new RuntimeException(ex);
+            }
+
+            Server.getServer().RUN();
+        });
+
+        server.start();
+        broadcast.start();
 
         SpringApplication.run(ApplicationStarter.class, args);
     }

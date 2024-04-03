@@ -3,7 +3,9 @@ package com.mongodb.starter.dtos;
 import com.mongodb.starter.models.MbotEntity;
 import org.bson.types.ObjectId;
 
-public record MbotDTO(float ultrasonic, int[] angles, int sound, int[] front_light_sensors,
+import java.util.ArrayList;
+
+public record MbotDTO(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> front_light_sensors,
                       int shake, int light, ObjectId id) {
 
     public MbotDTO(MbotEntity c) {
