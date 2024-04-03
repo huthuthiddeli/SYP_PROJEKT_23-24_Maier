@@ -3,9 +3,11 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:MBotController.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="MBotController.MBotDetailView"
-             x:DataType="vm:MBotDetailViewModel">
+			 xmlns:v="clr-namespace:MBotController.Views"
+			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="MBotController.Views.MBotDetailView"
+             x:DataType="vm:MBotDetailViewModel"
+			 KeyDown="sendCommand">
 	<UserControl.Styles>
 		<Styles>
 			<Style Selector="Border">
@@ -53,7 +55,7 @@
 
 		<!--joystick placeholder-->
 		<Border Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" BorderBrush="Black" CornerRadius="15" BorderThickness="3">
-			<Button Content="Send Data" Click="sendData"/>
+			<v:Joystick/>
 		</Border>
 
 		<Border Grid.Column="1" Grid.Row="1" BorderBrush="Black" CornerRadius="15" BorderThickness="3" Padding="10">

@@ -75,7 +75,10 @@ namespace MBotController.Services
             }
 
             HttpClient client = new HttpClient();
-            MBots.AddRange(client.GetFromJsonAsync<List<MBot>>($"http://{IP}:8080/api/tests").Result);
+            string json = client.GetStringAsync($"http://{IP}:8080/api/mbots").Result;
+            var res = client.GetFromJsonAsync<List<MBot>>($"http://{IP}:8080/api/mbots");
+            var list = res.Result;
+            MBots.AddRange(list);
 
             MBots.ForEach( mbot => mbot.RandomColor() );
 
@@ -124,7 +127,7 @@ namespace MBotController.Services
 
         }
 
-        public static async Task<string> sendCommand(Command command)
+        public static async Task<string> SendCommand(Command command)
         {
             HttpClient client = new HttpClient();
 

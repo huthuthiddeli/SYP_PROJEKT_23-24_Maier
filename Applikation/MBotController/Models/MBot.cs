@@ -13,7 +13,7 @@ namespace MBotController.Models
     {
         [JsonIgnore]
         public static int Count { get; set; } = 0;
-        public int ID { get; set; }
+        public int? ID { get; set; }
         public string IP {  get; set; }
         [JsonIgnore]
         public string Name { get; set; }
