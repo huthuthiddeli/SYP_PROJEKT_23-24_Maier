@@ -6,6 +6,7 @@ import urequests
 import ujson
 import os
 import _thread
+import sys
 
 class SensorData:
     def __init__(self, ultrasonic, light, sound, angles, shake, front_light_sensors):
@@ -24,7 +25,7 @@ class SensorData:
         dict["angles"] = self.angles
         dict["shake"] = self.shake
         dict["front_light_sensors"] = self.front_light_sensors
-        return ujson.dumbs(dict)
+        return ujson.dumps(dict)
      
     @staticmethod
     def read_sensor_data():
@@ -85,8 +86,8 @@ def find_server(broadcast_ip, broadcast_port, self_port, req_msg, ack_msg):
     cpi.console.println("Searching server...")
     cpi.led.on(255,0, 0)
     while True:
-        broadcast_socket.sendall(b' '.join([req_msg, str(self_port).encode('utf-8')]))
         try:
+            broadcast_socket.sendall(b' '.join([req_msg, str(self_port).encode('utf-8')]))
             response_data, server_address = recv_socket.recvfrom(2048)
             cpi.console.println('Server responded')
             cpi.led.on(0, 255, 0)
@@ -96,7 +97,11 @@ def find_server(broadcast_ip, broadcast_port, self_port, req_msg, ack_msg):
         except OSError as e:
             if e.args[0] == 110:  # errno 110: ETIMEDOUT
                 cpi.console.println('Searching server...')
-                cpi.led
+                cpi.led.on(255,0,0)
+            elif e.args[0] == 118:
+                cpi.console.println('Wifi is not connected')
+                cpi.led.on(255,0,0)
+                connect_wlan(WIFI_SSID, WIFI_PW)
         time.sleep(5)
         cpi.led.on(0, 0, 0)
         
@@ -115,15 +120,18 @@ def connect_to_server(server_address):
 
 
 def post_data_coroutine(post_route):
+    global POST_THREAD_STOPPED
+    
     while not STOP_THREADS:
         json = SensorData.read_sensor_data().get_json()
         urequests.post(post_route, data = json)
-        cpi.console.print("Data sent...")
         time.sleep(0.5)
+    POST_THREAD_STOPPED = True
         
         
 def receiving_coroutine(tcp_socket):
     global ANTI_SUICE_ON
+    global RECEIVE_THREAD_STOPPED
     
     while not STOP_THREADS:
         data = tcp_socket.recv(1024)
@@ -144,7 +152,7 @@ def receiving_coroutine(tcp_socket):
         elif not LINE_FOLLOW_ON:
             try:
                 values_strip = data.strip("[]")
-                values = [int(num) for num in numbers_str.split(",")]
+                values = [int(num) for num in values_strip.split(",")]
                 
                 if len(values) == 4:
                     cpi.console.println("LED")
@@ -154,7 +162,9 @@ def receiving_coroutine(tcp_socket):
                     cpi.console.println("Illegal values!")
             except:
                 cpi.console.println("Illegal values!")
-
+                
+    RECEIVE_THREAD_STOPPED = True
+    
 
 def move(left, right):    
     if LINE_FOLLOW_ON:
@@ -183,7 +193,7 @@ def move(left, right):
             else: cpi.led.on(0,255,0)
         else:
             cpi.mbot2.drive_power(left, right)
-
+            
 
 def start_coroutines(tcp_socket, post_route):
     global STOP_THREADS
@@ -191,12 +201,21 @@ def start_coroutines(tcp_socket, post_route):
     
     _thread.start_new_thread(post_data_coroutine, (post_route,))
     _thread.start_new_thread(receiving_coroutine, (tcp_socket,))
+    
+    POST_THREAD_STOPPED = False
+    RECEIVE_THREAD_STOPPED = False
 
 
 def stop_coroutines():
     global STOP_THREADS
-    STOP_THREADS = True
+    global POST_THREAD_STOPPED
+    global RECEIVE_THREAD_STOPPED
 
+    STOP_THREADS = True
+    
+    while not POST_THREAD_STOPPED and not RECEIVE_THREAD_STOPPED:
+        time.sleep(0.1)
+        
 
 def START_MBOT():
     stop_coroutines()
@@ -205,9 +224,12 @@ def START_MBOT():
     cpi.console.println(str(SERVER_IP[0])+":"+str(SERVER_IP[1]))
     POST_ROUTE = WEB_PROTOCOL+str(SERVER_IP[0])+":"+str(WEB_SERVER_PORT)+API_ROUTE
     start_coroutines(connect_to_server(SERVER_IP), POST_ROUTE)
-    
+    time.sleep(10)
+    stop_coroutines()
 
 STOP_THREADS = False
+POST_THREAD_STOPPED = True
+RECEIVE_THREAD_STOPPED = True
 ANTI_SUICE_ON = False
 LINE_FOLLOW_ON = False
 
@@ -224,13 +246,5 @@ WEB_SERVER_PORT = 8080
 WEB_PROTOCOL = "http://"
 API_ROUTE = "/api/mbot/Data"
 
-while True:
-    if cpi.controller.is_press('a'):
-        start_msg = ""
-        if not STOP_THREADS:
-            start_msg += "Starting..."
-        else:
-            start_msg += "Restarting..."
-        cpi.console.println(start_msg)
-        time.sleep(5)
-        START_MBOT()
+# Implement start event handler on btn press 'a' here:
+START_MBOT()
