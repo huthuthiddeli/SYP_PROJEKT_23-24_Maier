@@ -13,6 +13,7 @@ using System.Net.Http.Json;
 using System.Diagnostics;
 using Avalonia.Controls;
 using System.Net.Http.Headers;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace MBotController.Services
 {
@@ -21,6 +22,8 @@ namespace MBotController.Services
         public static MBotService Instance { get; } = new MBotService();
         private static string IP {  get; set; }
         private static int Port { get; set; }
+        public static Command? Command { get; set; }
+        public static MBot? CurrentBot { get; set; }
         private object _lock = new object();
         public List<MBot> MBots { get; set; } = new List<MBot>();
         //TODO: Get MBots from server, otherwise use test data for debug purposes
@@ -28,6 +31,8 @@ namespace MBotController.Services
         private MBotService()
         {
             this.SetItems();
+
+            SendCommand();
         }
 
         private void SetItems()
@@ -127,15 +132,27 @@ namespace MBotController.Services
 
         }
 
-        public static async Task<string> SendCommand(Command command)
+        public static async void SendCommand()
         {
             HttpClient client = new HttpClient();
+            Command = new Command("0;0", "/" + CurrentBot);
 
-            string json = JsonSerializer.Serialize(command);
-            HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
-            var res = await client.PostAsync($"http://{IP}:8080/api/mbot/commandQueue", content);
+            while (true)
+            {
+                if (Command is not null)
+                {
+                    string json = JsonSerializer.Serialize(Command);
+                    HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
+                    var res = await client.PostAsync($"http://{IP}:8080/api/mbot/commandQueue", content);
+                }
 
-            return res.Content.ToString();
+                if (CurrentBot is not null && Command is not null && Command.Name == "0;0")
+                {
+                    Command = null;
+                }
+
+                await Task.Delay(1);
+            }
         }
     }
 }
