@@ -13,9 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api")
@@ -26,68 +24,70 @@ public class MbotController {
     private final ObjectMapper mapper = new ObjectMapper();
     private final Server server = Server.getServer();
 
+
+    private HashMap<String, MbotDTO> lastPackage = new HashMap<>();
+    private int counter = 0;
+    private Command prevCommand;
+
+
     public MbotController(MbotService mbotService) {
 
         this.MbotService = mbotService;
     }
 
-    /**
-     * <p> Creates an entry in the mongoDB </p>
-     *
-     *
-     * @param mbotDTO Sensordata object
-     * @return If successfull return the given Object otherwise null
-     */
-    @PostMapping("/mbot")
-    @ResponseStatus(HttpStatus.CREATED)
-    public @ResponseBody MbotDTO saveToDB(@RequestBody MbotDTO mbotDTO) {
-        return MbotService.save(mbotDTO);
-    }
-
-    @GetMapping("/mbots")
+    @GetMapping("/savedMbots")
     @ResponseStatus(HttpStatus.OK)
     public @ResponseBody List<MbotDTO> getAllDB() {
         return MbotService.findAll();
     }
 
-    @PostMapping("/mbot/command")
-    @ResponseStatus(HttpStatus.CREATED)
-    public @ResponseBody String postCommands(@RequestBody Command command) throws IOException {
-
-        return "";
-    }
-
+    /**
+     *  <h>Get Data from MBOT. Every 25th item will be saved in the database. All of these will be directed to the Client</h>
+     * @param item Sensordata object from MBOT
+     * @throws JsonProcessingException
+     * @throws IOException
+     */
     @PostMapping("/mbot/Data")
     @ResponseStatus(HttpStatus.OK)
     public @ResponseBody void postData(@RequestBody MbotDTO item) throws JsonProcessingException, IOException {
-        LOGGER.debug(mapper.writeValueAsString(item));
 
         try{
-            MbotEntity entity = item.toMbotEntity();
+
+            lastPackage.put(item.toMbotEntity().getIP(), item);
+
+            if(counter >= 25){
+                MbotService.save(item);
+                counter = 0;
+            }
+
         }catch (IllegalArgumentException e){
             LOGGER.error(e.getMessage());
+        }finally {
+            counter++;
         }
     }
 
 
     @PostMapping("/mbot/commandQueue")
     @ResponseStatus(HttpStatus.OK)
-    public @ResponseBody String getCommandQueue(@RequestBody Command command) throws IOException {
+    public @ResponseBody void getCommandQueue(@RequestBody Command command) throws IOException {
 
-
-        try{
-            if(server.sendCommandToClient(command)){
-                return "Worked!";
-            }
-        }catch (Exception ex){
-            LOGGER.error(ex.getMessage());
-            LOGGER.error(ex.getCause().getMessage());
+        if(command == null){
+            return;
         }
 
+        if(Objects.equals(prevCommand, command) && prevCommand == null){
+            return;
+        }
 
-
-
-        return "Error!";
+        try{
+            if(server.SendCommandToClient(command)){
+                return;
+            }
+        }catch (Exception ex){
+            LOGGER.error("[MBOTCONTROLLER]\t" +ex.getMessage());
+            LOGGER.error("[MBOTCONTROLLER]\t" + ex.getCause().getMessage());
+        }
     }
 
     @GetMapping("/mbot/{id}")
@@ -98,62 +98,31 @@ public class MbotController {
         return CarDTO;
     }
 
-    @GetMapping("/mbot/{ids}")
+    @GetMapping("/mbots")
     @ResponseStatus(HttpStatus.OK)
-    public List<MbotDTO> getCars(@PathVariable String ids) {
-        List<String> listIds = List.of(ids.split(","));
-        return MbotService.findAll(listIds);
+    public @ResponseBody String getActiveMbots() throws JsonProcessingException {
+
+        ArrayList<MbotDTO> list = new ArrayList<>();
+
+        if(!lastPackage.isEmpty()){
+            lastPackage.forEach((v,k) -> {
+                list.add(k);
+            });
+        }else{
+            LOGGER.info("[MbotController]\tTEST DATA SENT!");
+            list.add(new MbotDTO(2.5f, new ArrayList<Integer>(Arrays.asList(1,2,3,6,8,9,99)), 3,
+                    new ArrayList<Integer>(Arrays.asList(1,2,3,4,6))
+                    , 95, 22, "1.12.23.4"));
+        }
+
+
+        return mapper.writeValueAsString(list);
     }
 
-    @GetMapping("tests")
-    @ResponseStatus(HttpStatus.OK)
-    public @ResponseBody String items(){
-
-
-
-        return "[{\"ID\": 1, \"IP\": \"10.10.1.1.\", \"Name\":\"Johannesbeersaft\", \"Velocity\": 66}," +
-                "{\"ID\": 2, \"IP\": \"10.10.1.3.\", \"Name\":\"Davidseier\", \"Velocity\": 33}]";
-    }
-
-    @GetMapping("test")
-    @ResponseStatus(HttpStatus.OK)
-    public @ResponseBody String item() throws JsonProcessingException {
-        MbotEntity m = new MbotEntity(2.5f, new ArrayList<Integer>(Arrays.asList(1,2,3,6,8,9,99)), 3,
-                new ArrayList<Integer>(Arrays.asList(1,2,3,4,6))
-                , 95, 22);
-
-        return mapper.writeValueAsString(m);
-    }
-
-
-    @GetMapping("mbots/count")
-    @ResponseStatus(HttpStatus.OK)
-    public Long getCount() {
-        return MbotService.count();
-    }
-
-    @DeleteMapping("mbot/{id}")
-    @ResponseStatus(HttpStatus.CREATED)
-    public Long deleteCar(@PathVariable String id) {
-        return MbotService.delete(id);
-    }
-
-    @DeleteMapping("mbots")
-
+    //TODO: MAKE IT WORK {TRANSACTIONS ARE NOT WORKING WITH MONGODB WITHOUT SETTINGS}
+    @DeleteMapping("/mbots/sure")
     public Long deleteCars() {
         return MbotService.deleteAll();
-    }
-
-    @PutMapping("mbot")
-    @ResponseStatus(HttpStatus.CREATED)
-    public MbotDTO putCar(@RequestBody MbotDTO CarDTO) {
-        return MbotService.update(CarDTO);
-    }
-
-    @PutMapping("mbots")
-    @ResponseStatus(HttpStatus.CREATED)
-    public Long putCars(@RequestBody List<MbotDTO> carEntities) {
-        return MbotService.update(carEntities);
     }
 
     @ExceptionHandler(RuntimeException.class)

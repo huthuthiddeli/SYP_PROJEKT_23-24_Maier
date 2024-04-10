@@ -6,13 +6,13 @@ import org.bson.types.ObjectId;
 import java.util.ArrayList;
 
 public record MbotDTO(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> front_light_sensors,
-                      int shake, int light, ObjectId id) {
+                      int shake, int light, String IP) {
 
     public MbotDTO(MbotEntity c) {
-        this(c.getUltrasonic(), c.getAngles(), c.getSound(), c.getFront_light_sensors(), c.getShake(), c.getLight(), c.getId());
+        this(c.getUltrasonic(), c.getAngles(), c.getSound(), c.getFront_light_sensors(), c.getShake(), c.getLight(), c.getIP());
     }
 
     public MbotEntity toMbotEntity() {
-        return new MbotEntity(ultrasonic, angles, sound, front_light_sensors, shake, light, id);
+        return new MbotEntity(ultrasonic, angles, sound, front_light_sensors, shake, light, IP);
     }
 }

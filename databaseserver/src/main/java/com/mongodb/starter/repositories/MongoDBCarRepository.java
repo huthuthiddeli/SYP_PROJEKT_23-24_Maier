@@ -110,8 +110,7 @@ public class MongoDBCarRepository implements MbotRepository {
     @Override
     public long update(List<MbotEntity> personEntities) {
         List<ReplaceOneModel<MbotEntity>> writes = personEntities.stream()
-                .map(p -> new ReplaceOneModel<>(eq("_id", p.getId()),
-                        p))
+                .map(p -> new ReplaceOneModel<>(eq("_id", p.getId()), p))
                 .toList();
         try (ClientSession clientSession = client.startSession()) {
             return clientSession.withTransaction(
