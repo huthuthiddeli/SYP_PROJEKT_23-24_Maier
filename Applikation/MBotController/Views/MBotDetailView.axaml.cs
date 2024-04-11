@@ -9,6 +9,7 @@ using MBotController.Models;
 using MBotController.Services;
 using MBotController.ViewModels;
 using System;
+using System.Globalization;
 using System.Net.Cache;
 using System.Net.Http;
 
@@ -108,7 +109,7 @@ internal partial class MBotDetailView : UserControl
             normalizedY = Math.Round(normalizedY, 2);
 
             var context = this.DataContext as MBotDetailViewModel;
-            MBotService.Command = new Command($"{normalizedX};{normalizedY}", "/" + context.Bot.IP);
+            MBotService.Command = new Command($"{normalizedX.ToString(CultureInfo.InvariantCulture)};{normalizedY.ToString(CultureInfo.InvariantCulture)}", "/" + context.Bot.IP);
             Console.WriteLine();
         }
     }

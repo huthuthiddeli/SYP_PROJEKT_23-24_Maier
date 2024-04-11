@@ -151,7 +151,7 @@ namespace MBotController.Services
                     Command = null;
                 }
 
-                await Task.Delay(1);
+                await Task.Delay(300);
             }
         }
     }
