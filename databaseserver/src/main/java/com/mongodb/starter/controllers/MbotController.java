@@ -52,10 +52,10 @@ public class MbotController {
     public @ResponseBody void postData(@RequestBody MbotDTO item) throws JsonProcessingException, IOException {
 
         try{
-
             lastPackage.put(item.toMbotEntity().getIP(), item);
 
             if(counter >= 25){
+                LOGGER.info("[MbotController]\tData receivied!");
                 MbotService.save(item);
                 counter = 0;
             }
@@ -70,24 +70,26 @@ public class MbotController {
 
     @PostMapping("/mbot/commandQueue")
     @ResponseStatus(HttpStatus.OK)
-    public @ResponseBody void getCommandQueue(@RequestBody Command command) throws IOException {
+    public @ResponseBody boolean getCommandQueue(@RequestBody Command command) throws IOException {
 
         if(command == null){
-            return;
+            return false;
         }
 
         if(Objects.equals(prevCommand, command) && prevCommand == null){
-            return;
+            return false;
         }
 
         try{
             if(server.SendCommandToClient(command)){
-                return;
+                return false;
             }
         }catch (Exception ex){
             LOGGER.error("[MBOTCONTROLLER]\t" +ex.getMessage());
             LOGGER.error("[MBOTCONTROLLER]\t" + ex.getCause().getMessage());
         }
+
+        return true;
     }
 
     @GetMapping("/mbot/{id}")

@@ -45,52 +45,11 @@ public class Server {
                 if(IsRegisteredSocket(clientSocket)){
                     continue;
                 }
-
-                //SEND DATA TO MBOT (DELETE LATER)
-                for(InetAddress socket : BroadcastServer.getMbotSockets()){
-                    if(Objects.equals(clientSocket.getInetAddress(), socket)){
-                        OutputStream s = clientSocket.getOutputStream();
-
-                        while(!debugList.isEmpty()){
-                            if(!clientSocket.isConnected()){
-                                connectedSockets.remove(clientSocket);
-                            }
-
-                            //TEST DATA
-                            //s.write(debugList.get(0).getBytes());
-                            //LOGGER.info("[SERVER]\t\tItem sent to MBOT: " + debugList.get(0));
-
-                            debugList.remove(0);
-                            Thread.sleep(2000);
-                        }
-
-                        s.flush();
-                    }
-                }
-
-
-                //SEND DATA TO CLIENT (DELETE LATER)
-                if(Objects.equals(clientSocket.getInetAddress(), BroadcastServer.getClientSocket())){
-                    OutputStream s = clientSocket.getOutputStream();
-                    /*
-                    MbotDTO mbotDTO = new MbotDTO(2.5f, new ArrayList<Integer>(Arrays.asList(1,2,3,6,8,9,99)), 3,
-                            new ArrayList<Integer>(Arrays.asList(1,2,3,4,6))
-                            , 95, 22, "1.12.23.4");
-
-                    s.write(mapper.writeValueAsBytes(mbotDTO));
-
-                     */
-
-                    s.write(mapper.writeValueAsBytes(BroadcastServer.getMbotSockets()));
-
-                    s.flush();
-                }
-
+                
+                IsStillConnected();
             }
         } catch (IOException e) {
            LOGGER.error("[SERVER]\t\t\tError occurred while running the server: " + e.getMessage());
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         } catch (ConcurrentModificationException e){
             LOGGER.error("[SERVER]\t\t\t" + e.getMessage());
         }catch(Exception e){
@@ -121,28 +80,24 @@ public class Server {
             if(!s.isConnected()){
                 connectedSockets.remove(s);
             }
-                outputStream = s.getOutputStream();
-                outputStream.write(command.getName().getBytes());
 
         }catch (Exception ex){
-            LOGGER.error("[SERVER]\t\t\t" + ex.getMessage());
+            LOGGER.error("[SERVER]\t\t\tERROR:" + ex.getMessage());
             LOGGER.error("[SERVER]\t\t\tRestart Mbot with ip: " + command.getSocket());
+
             return false;
         }
-
-
 
         return true;
     }
 
-    private boolean IsConnected(String clientSocket, String listSocket){
-        if(Objects.equals(clientSocket,listSocket)){
-            return true;
+    private void IsStillConnected() throws IOException {
+        for(Socket s : connectedSockets){
+            if(!s.isConnected()){
+                s.close();
+            }
         }
-
-        return false;
     }
-
 
     //IF IP IS ALREADY IN LIST SKIP ACTIONS
     private boolean IsRegisteredSocket(Socket address){
@@ -150,9 +105,7 @@ public class Server {
             return false;
         }
 
-
         for(Socket s : connectedSockets){
-            //LOGGER.info(String.valueOf("[SERVER]\t\t\t" + s.getInetAddress() + "  " + address.getInetAddress()));
             if(Objects.equals(s.getInetAddress(), address.getInetAddress())){
                 return true;
             }
@@ -169,7 +122,6 @@ public class Server {
 
     private boolean IsRegisteredString(String socket){
         for(Socket s : connectedSockets) {
-            //LOGGER.info(String.valueOf("[SERVER]\t\t\t" + s.getInetAddress() + "  " + socket));
             if (Objects.equals(s.getInetAddress().toString(), socket)) {
 
                 if(!s.isConnected()){
@@ -185,6 +137,10 @@ public class Server {
     }
 
     private Socket TetermineRightSocket(Command command){
+
+        if(connectedSockets.isEmpty()){
+            LOGGER.error("[SERVER]\t\t\tNO SOCKETS!");
+        }
 
         for(int i = 0; i < connectedSockets.size(); i++){
             if(IsRegisteredString(command.getSocket())){
