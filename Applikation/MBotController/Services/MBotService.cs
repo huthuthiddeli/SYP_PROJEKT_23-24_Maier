@@ -20,7 +20,7 @@ namespace MBotController.Services
     internal class MBotService
     {
         public static MBotService Instance { get; } = new MBotService();
-        private static string IP {  get; set; }
+        private static string IP { get; set; }
         private static int Port { get; set; }
         public static Command? Command { get; set; }
         public static MBot? CurrentBot { get; set; }
@@ -44,30 +44,36 @@ namespace MBotController.Services
                 new MBot("192.168.0.3", 30, 5.99, new List<int>(){1,2,3,4 }, 22, new List<int>(){4,3,2,1 }, 57, 24)
             };*/
 
-            UdpClient udpClient = new UdpClient(6543);
+            var ServerEp = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 5595);
+            UdpClient udpClient = new UdpClient(ServerEp);
+            udpClient.EnableBroadcast = true;
             try
             {
-                // Sends a message to the host to which you have connected.
-                byte[] sendBytes = Encoding.ASCII.GetBytes("ACC");
-
-                udpClient.Send(sendBytes, sendBytes.Length, IPAddress.Broadcast.ToString(), 5595);
-
-                //IPEndPoint object will allow us to read datagrams sent from any source.
-                IPEndPoint RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, 5595);
-
-                // Blocks until a message returns on this socket from a remote host.    
-                byte[] receiveBytes = udpClient.Receive(ref RemoteIpEndPoint);
-                string returnData = Encoding.ASCII.GetString(receiveBytes);
-
-                if (returnData == "ACC")
+                while (true)
                 {
-                    //Success
-                    IP = RemoteIpEndPoint.Address.ToString();
-                    Port = RemoteIpEndPoint.Port;
-                } 
-                else
-                {
-                    //No success
+                    // Sends a message to the host to which you have connected.
+                    byte[] sendBytes = Encoding.UTF8.GetBytes("ACC");
+
+                    udpClient.Send(sendBytes, sendBytes.Length, IPAddress.Broadcast.ToString(), 5595);
+
+                    //IPEndPoint object will allow us to read datagrams sent from any source.
+                    IPEndPoint RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, 5595);
+
+                    // Blocks until a message returns on this socket from a remote host.    
+                    byte[] receiveBytes = udpClient.Receive(ref RemoteIpEndPoint);
+                    string returnData = Encoding.ASCII.GetString(receiveBytes);
+
+                    if (returnData == "ACCACK")
+                    {
+                        //Success
+                        IP = RemoteIpEndPoint.Address.ToString();
+                        Port = RemoteIpEndPoint.Port;
+                        break;
+                    }
+                    else
+                    {
+                        //No success
+                    }
                 }
             }
             catch (Exception e)
@@ -85,7 +91,7 @@ namespace MBotController.Services
             var list = res.Result;
             MBots.AddRange(list);
 
-            MBots.ForEach( mbot => mbot.RandomColor() );
+            MBots.ForEach(mbot => mbot.RandomColor());
 
             /*try
             {
@@ -141,17 +147,19 @@ namespace MBotController.Services
             {
                 if (Command is not null)
                 {
+                    Command.Name += "!";
+
                     string json = JsonSerializer.Serialize(Command);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
                     var res = await client.PostAsync($"http://{IP}:8080/api/mbot/commandQueue", content);
                 }
 
-                if (CurrentBot is not null && Command is not null && Command.Name == "0;0")
+                if (CurrentBot is not null && Command is not null && Command.Name == "0;0!")
                 {
                     Command = null;
                 }
 
-                await Task.Delay(300);
+                await Task.Delay(50);
             }
         }
     }
