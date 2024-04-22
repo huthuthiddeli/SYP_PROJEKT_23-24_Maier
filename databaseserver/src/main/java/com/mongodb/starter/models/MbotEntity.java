@@ -3,10 +3,7 @@ package com.mongodb.starter.models;
 import org.bson.types.ObjectId;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class MbotEntity {
     private float ultrasonic;

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.starter.dtos.MbotDTO;
 import com.mongodb.starter.models.Command;
+import com.mongodb.starter.models.MbotEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.*;
@@ -18,13 +19,12 @@ public class Server {
     private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
 
     private ArrayList<Command> commandList = new ArrayList<>();
-    private ArrayList<String> debugList = new ArrayList<>(List.of("1;1", "50;-50", "25;25", "299;299", "-90;90", "0;0"));
 
     private ArrayList<Socket> connectedSockets = new ArrayList<>();
     private final ObjectMapper mapper = new ObjectMapper();
+    private OutputStream stream;
 
     private int prevSize = 0;
-    private OutputStream outputStream;
 
 
     private Server(){}
@@ -61,6 +61,7 @@ public class Server {
         Socket s = TetermineRightSocket(command);
 
         if(s == null){
+            LOGGER.info("[SERVER]\t\t\tSockets: " +  s.toString());
             return false;
         }
 
@@ -78,8 +79,13 @@ public class Server {
 
             //DELETE IF THE CONNECTION IS NOT UP ANYMORE
             if(!s.isConnected()){
+                LOGGER.info("[SERVER]\t\t\tIs not connected anymore!");
                 connectedSockets.remove(s);
             }
+            stream = s.getOutputStream();
+
+            stream.write(command.getName().getBytes());
+            stream.flush();
 
         }catch (Exception ex){
             LOGGER.error("[SERVER]\t\t\tERROR:" + ex.getMessage());
@@ -90,6 +96,17 @@ public class Server {
 
         return true;
     }
+
+    public boolean SendSensorDataToClient(MbotEntity m){
+
+
+
+
+
+        return true;
+    }
+
+
 
     private void IsStillConnected() throws IOException {
         for(Socket s : connectedSockets){
@@ -109,13 +126,9 @@ public class Server {
             if(Objects.equals(s.getInetAddress(), address.getInetAddress())){
                 return true;
             }
-
-            connectedSockets.add(address);
         }
 
-        if(connectedSockets.isEmpty()){
-            connectedSockets.add(address);
-        }
+        connectedSockets.add(address);
 
         return false;
     }
@@ -147,6 +160,8 @@ public class Server {
                 return connectedSockets.get(i);
             }
         }
+
+        LOGGER.error("[SERVER]\t\t\tNo Sockets matching!");
 
         return null;
     }

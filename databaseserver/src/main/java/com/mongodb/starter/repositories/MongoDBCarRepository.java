@@ -10,6 +10,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.starter.models.MbotEntity;
+import com.mongodb.starter.repositories.MbotRepository;
 import jakarta.annotation.PostConstruct;
 import org.bson.BsonDocument;
 import org.bson.types.ObjectId;
@@ -17,6 +18,8 @@ import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.in;
 import static com.mongodb.client.model.ReturnDocument.AFTER;
@@ -102,9 +105,9 @@ public class MongoDBCarRepository implements MbotRepository {
     }
 
     @Override
-    public MbotEntity update(MbotEntity MbotEntity) {
+    public MbotEntity update(MbotEntity mbotEntity) {
         FindOneAndReplaceOptions options = new FindOneAndReplaceOptions().returnDocument(AFTER);
-        return personCollection.findOneAndReplace(eq("_id", MbotEntity.getId()), MbotEntity, options);
+        return personCollection.findOneAndReplace(eq("_id", mbotEntity.getId()), mbotEntity, options);
     }
 
     @Override

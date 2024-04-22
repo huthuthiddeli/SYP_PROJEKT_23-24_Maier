@@ -55,7 +55,7 @@ public class BroadcastServer {
                 }
 
                 if(receivedMessage.trim().equals("ACC")){
-                    String responseMessage = "ACC";
+                    String responseMessage = "ACCACK";
                     byte[] responseData = responseMessage.getBytes(StandardCharsets.UTF_8);
                     DatagramPacket responsePacket = new DatagramPacket(responseData, responseData.length, senderAddress, senderPort);
                     socket.send(responsePacket);

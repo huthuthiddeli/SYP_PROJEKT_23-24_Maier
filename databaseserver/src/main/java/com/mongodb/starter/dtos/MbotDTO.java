@@ -1,9 +1,11 @@
 package com.mongodb.starter.dtos;
 
+import com.mongodb.lang.Nullable;
 import com.mongodb.starter.models.MbotEntity;
 import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 public record MbotDTO(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> front_light_sensors,
                       int shake, int light, String IP) {
@@ -14,5 +16,18 @@ public record MbotDTO(float ultrasonic, ArrayList<Integer> angles, int sound, Ar
 
     public MbotEntity toMbotEntity() {
         return new MbotEntity(ultrasonic, angles, sound, front_light_sensors, shake, light, IP);
+    }
+
+    @Override
+    public String toString() {
+        return "MyRecord{" +
+                "ultrasonic=" + ultrasonic +
+                ", angles=" + angles +
+                ", sound=" + sound +
+                ", front_light_sensors=" + front_light_sensors +
+                ", shake=" + shake +
+                ", light=" + light +
+                ", IP='" + IP + '\'' +
+                '}';
     }
 }

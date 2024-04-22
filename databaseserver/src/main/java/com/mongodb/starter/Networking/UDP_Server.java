@@ -19,10 +19,14 @@ public class UDP_Server {
     private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
     private DatagramSocket serverSocket;
 
+    private ArrayList<String> knownSockets = new ArrayList<>();
+
+
+
     private UDP_Server(){}
 
     public void RUN(){
-        int PORT = 5000;
+        int PORT = 6000;
 
         try{
             serverSocket = new DatagramSocket(PORT);
@@ -46,14 +50,45 @@ public class UDP_Server {
                 DatagramPacket responsePackage = new DatagramPacket(responseData, responseData.length);
 
                 serverSocket.send(responsePackage);
+
+                knownSockets.add(senderAddress.toString() + senderAddress);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    public InetAddress GetRigtMbotSocket(Command m){
 
-    public UDP_Server GetInstance(){
+        for(int i = 0; i < BroadcastServer.getMbotSockets().size(); i++){
+            if(Objects.equals(m.getSocket(), BroadcastServer.getMbotSockets().get(i).toString())){
+                return BroadcastServer.getMbotSockets().get(i);
+            }
+        }
+
+
+        return null;
+    }
+
+
+    public boolean SendCommand(Command m) throws IOException {
+
+        byte[] buffer = m.getName().getBytes(StandardCharsets.UTF_8);
+
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+
+        InetAddress MbotAdress = GetRigtMbotSocket(m);
+
+        SocketAddress address = new InetSocketAddress(MbotAdress, 4000);
+
+        DatagramSocket socket = new DatagramSocket(address);
+
+        socket.send(packet);
+
+        return true;
+    }
+
+    public static UDP_Server GetInstance(){
         if(INSTANCE == null){
             INSTANCE = new UDP_Server();
         }
