@@ -9,6 +9,7 @@ import com.mongodb.starter.dtos.MbotDTO;
 import com.mongodb.starter.models.Command;
 import com.mongodb.starter.models.MbotEntity;
 import com.mongodb.starter.services.MbotService;
+import io.swagger.v3.oas.annotations.Operation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -41,6 +42,7 @@ public class MbotController {
 
     @GetMapping("/savedMbots")
     @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Get all entrys saved inside of the MongoDB")
     public @ResponseBody List<MbotDTO> getAllDB() {
         return MbotService.findAll();
     }

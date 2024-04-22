@@ -1,6 +1,8 @@
 package com.mongodb.starter.models;
 
 public class Command {
+
+    //Refactor: update command to fitting class
     private String name;
     private String socket;
 
@@ -22,15 +24,7 @@ public class Command {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getSocket() {
         return socket;
-    }
-
-    public void setSocket(String  socket) {
-        this.socket = socket;
     }
 }

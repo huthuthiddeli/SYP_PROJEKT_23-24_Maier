@@ -71,19 +71,26 @@ public class UDP_Server {
     }
 
 
-    public boolean SendCommand(Command m) throws IOException {
+    public boolean SendCommand(Command m){
+        try{
+            byte[] buffer = m.getName().getBytes(StandardCharsets.UTF_8);
 
-        byte[] buffer = m.getName().getBytes(StandardCharsets.UTF_8);
+            InetAddress MbotAdress = GetRigtMbotSocket(m);
 
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+            if(MbotAdress == null){
+                LOGGER.info("[UDP_Server]\n\nNo Mbot with this address has been found: " + m.getSocket());
+            }
 
-        InetAddress MbotAdress = GetRigtMbotSocket(m);
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length, MbotAdress, 4000);
 
-        SocketAddress address = new InetSocketAddress(MbotAdress, 4000);
 
-        DatagramSocket socket = new DatagramSocket(address);
+            DatagramSocket socket = new DatagramSocket();
 
-        socket.send(packet);
+            socket.send(packet);
+
+        }catch (IOException ex){
+            LOGGER.info("[UDP_Server]\t\tError: " + ex.getMessage());
+        }
 
         return true;
     }

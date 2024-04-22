@@ -65,10 +65,8 @@ public class BroadcastServer {
             }
         } catch (IOException e) {
            LOGGER.error("[BROADCAST]\t\tError: " + e.getMessage());
-            e.printStackTrace();
         }catch(IllegalArgumentException e){
            LOGGER.error("[BROADCAST]\t\t" + e.getMessage());
-            e.printStackTrace();
         }
     }
 

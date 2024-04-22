@@ -11,6 +11,8 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class Server {
@@ -36,10 +38,10 @@ public class Server {
             ServerSocket serverSocket = new ServerSocket(portNumber);
             LOGGER.info("[SERVER]\t\t\tTCP-Server started on port " + portNumber);
 
-            while (true) {
+            while(true) {
                 Socket clientSocket = serverSocket.accept(); // Accept incoming client connections
 
-                LOGGER.info("[SERVER]\t\t\tMbot connected: " + clientSocket.getInetAddress().getHostAddress());
+                LOGGER.info("[SERVER]\t\t\tConnection from: " + clientSocket.getInetAddress().getHostAddress());
 
                 //check if ip address is already registered
                 if(IsRegisteredSocket(clientSocket)){
@@ -52,23 +54,17 @@ public class Server {
            LOGGER.error("[SERVER]\t\t\tError occurred while running the server: " + e.getMessage());
         } catch (ConcurrentModificationException e){
             LOGGER.error("[SERVER]\t\t\t" + e.getMessage());
-        }catch(Exception e){
-            LOGGER.error("[SERVER]\t\t\tError: " + e.getMessage());
         }
     }
 
     public boolean SendCommandToClient(Command command) throws IOException, InterruptedException {
-        Socket s = TetermineRightSocket(command);
+        Socket s = TetermineRightSocketMbot(command);
 
         if(s == null){
             LOGGER.info("[SERVER]\t\t\tSockets: " +  s.toString());
             return false;
         }
 
-        LOGGER.info("[SERVER]\t\t\tCommand: " + command.toString());
-
-        //TODO: An established conection was aborted by the software in your hostmachine
-        //RANDOMLY DISCONNECTS FROM MBOT (CONNECTION CLOSE BY PEER)
 
         try {
             //INFO WHEN CONNECTED SOCKETS INCREASE
@@ -84,8 +80,11 @@ public class Server {
             }
             stream = s.getOutputStream();
 
-            stream.write(command.getName().getBytes());
+            stream.write(command.getName().getBytes(StandardCharsets.UTF_8));
             stream.flush();
+
+            LOGGER.info("[SERVER]\t\t\tCommand: " + command.toString() + " sent to: " + s.toString());
+
 
         }catch (Exception ex){
             LOGGER.error("[SERVER]\t\t\tERROR:" + ex.getMessage());
@@ -98,9 +97,25 @@ public class Server {
     }
 
     public boolean SendSensorDataToClient(MbotEntity m){
+        String clientSocketString = BroadcastServer.getClientSocket().split(":")[0];
 
+        try{
 
+            InetAddress clientSocket = InetAddress.getByAddress(clientSocketString.getBytes(StandardCharsets.UTF_8));
 
+            Socket s = TetermineRightSocketClient(clientSocket);
+
+            if(s == null){
+                LOGGER.info("[SERVER]\t\t\tThere was no such client registered: " + clientSocket.toString());
+                return false;
+            }
+
+            stream = s.getOutputStream();
+            stream.write(mapper.writeValueAsBytes(m));
+            stream.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
 
         return true;
@@ -149,19 +164,30 @@ public class Server {
         return false;
     }
 
-    private Socket TetermineRightSocket(Command command){
-
+    private Socket TetermineRightSocketMbot(Command command){
         if(connectedSockets.isEmpty()){
             LOGGER.error("[SERVER]\t\t\tNO SOCKETS!");
         }
 
-        for(int i = 0; i < connectedSockets.size(); i++){
-            if(IsRegisteredString(command.getSocket())){
-                return connectedSockets.get(i);
+        for (Socket connectedSocket : connectedSockets) {
+            if (IsRegisteredString(command.getSocket())) {
+                return connectedSocket;
             }
         }
 
-        LOGGER.error("[SERVER]\t\t\tNo Sockets matching!");
+        LOGGER.error("[SERVER]\t\t\tNo Mbot-Sockets matching!");
+
+        return null;
+    }
+
+    private Socket TetermineRightSocketClient(InetAddress address){
+        for(Socket s : connectedSockets){
+            if(Objects.equals(s.getInetAddress().toString(), address.toString())){
+                return s;
+            }
+        }
+
+        LOGGER.info("[SERVER]\t\t\tNo Client-Sockets matching!");
 
         return null;
     }
