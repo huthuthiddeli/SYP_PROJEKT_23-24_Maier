@@ -1,127 +1,195 @@
 package com.mongodb.starter.Networking;
 
-import com.mongodb.starter.ApplicationStarter;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.starter.dtos.MbotDTO;
 import com.mongodb.starter.models.Command;
+import com.mongodb.starter.models.MbotEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.ConcurrentModificationException;
-import java.util.List;
-import java.util.Objects;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class Server {
 
     private static Server INSTANCE;
-    private static Logger LOGGER = LoggerFactory.getLogger(Server.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
 
     private ArrayList<Command> commandList = new ArrayList<>();
-    private static ArrayList<String> debugList = new ArrayList<>(List.of("1;1", "50;-50", "25;25", "299;299", "-90;90", "0;0"));
 
-    private static ArrayList<Socket> connectedSockets = new ArrayList<>();
+    private ArrayList<Socket> connectedSockets = new ArrayList<>();
+    private final ObjectMapper mapper = new ObjectMapper();
+    private OutputStream stream;
 
     private int prevSize = 0;
 
+
     private Server(){}
 
-
-
     public void RUN() {
-        int portNumber = 5000; // Port number on which the server will listen
+        int portNumber = 5000;
 
         try {
             ServerSocket serverSocket = new ServerSocket(portNumber);
-            LOGGER.info("[SERVER]\t\tTCP-Server started on port " + portNumber);
+            LOGGER.info("[SERVER]\t\t\tTCP-Server started on port " + portNumber);
 
-            while (true) {
+            while(true) {
                 Socket clientSocket = serverSocket.accept(); // Accept incoming client connections
 
+                LOGGER.info("[SERVER]\t\t\tConnection from: " + clientSocket.getInetAddress().getHostAddress());
 
                 //check if ip address is already registered
-                for(Socket s : connectedSockets){
-                    LOGGER.info(String.valueOf("[SERVER]\t\t" + s.getInetAddress() + "  " + clientSocket.getInetAddress()));
-                    if(Objects.equals(s.getInetAddress(), clientSocket.getInetAddress())){
-                        break;
-                    }
-
-                    connectedSockets.add(clientSocket);
+                if(IsRegisteredSocket(clientSocket)){
+                    continue;
                 }
-
-                if(connectedSockets.isEmpty()){
-                    connectedSockets.add(clientSocket);
-                }
-
-                LOGGER.info("[SERVER]\t\tClient connected: " + clientSocket.getInetAddress().getHostAddress());
-                for(InetAddress socket : BroadcastServer.getMbotSockets()){
-
-                    if(Objects.equals(clientSocket.getInetAddress(), socket)){
-                        OutputStream s = clientSocket.getOutputStream();
-                        while(!debugList.isEmpty()){
-
-
-                            if(!clientSocket.isConnected()){
-                                connectedSockets.remove(clientSocket);
-                                return;
-                            }
-
-                            s.write(debugList.get(0).getBytes());
-                            debugList.remove(0);
-                            Thread.sleep(2000);
-                        }
-
-
-                        s.flush();
-                    }
-                }
+                
+                IsStillConnected();
             }
         } catch (IOException e) {
-           LOGGER.error("[SERVER]\t\tError occurred while running the server: " + e.getMessage());
-           e.printStackTrace();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+           LOGGER.error("[SERVER]\t\t\tError occurred while running the server: " + e.getMessage());
         } catch (ConcurrentModificationException e){
-            LOGGER.error("[SERVER]\t\t" + e.getMessage());
+            LOGGER.error("[SERVER]\t\t\t" + e.getMessage());
         }
     }
 
-    public boolean sendCommandToClient(Command m) throws IOException {
-        OutputStream s;
+    public boolean SendCommandToClient(Command command) throws IOException, InterruptedException {
+        Socket s = TetermineRightSocketMbot(command);
 
-        //TODO: An established conection was aborted by the software in your hostmachine
-        //happened when sending packages to the mbot via postman
-
-        for(int i = 0; i < connectedSockets.size(); i++){
-            if(Objects.equals(connectedSockets.get(i).getInetAddress().toString(), m.getSocket())){
-
+        if(s == null){
+            LOGGER.info("[SERVER]\t\t\tSockets: " +  s.toString());
+            return false;
+        }
 
 
-                if(prevSize == 0 || prevSize != connectedSockets.size()){
-                    LOGGER.info("[SERVER]\t\t" + String.valueOf("Size of List: " + connectedSockets.size()));
-                    prevSize = connectedSockets.size();
-                }
-
-
-                if(!connectedSockets.get(i).isConnected()){
-                    connectedSockets.remove(i);
-                }
-
-                try{
-                    s = connectedSockets.get(i).getOutputStream();
-                    s.write(m.getName().getBytes());
-                    s.flush();
-                }catch (Exception ex) {
-                    LOGGER.error(ex.getMessage().toString());
-                    LOGGER.error("[SERVER]\t\tRestart Mbot with ip: " + m.getSocket());
-                    return false;
-                }
+        try {
+            //INFO WHEN CONNECTED SOCKETS INCREASE
+            if(prevSize == 0 || prevSize != connectedSockets.size()){
+                LOGGER.info("[SERVER]\t\t\t" + String.valueOf("Size of List: " + connectedSockets.size()));
+                prevSize = connectedSockets.size();
             }
+
+            //DELETE IF THE CONNECTION IS NOT UP ANYMORE
+            if(!s.isConnected()){
+                LOGGER.info("[SERVER]\t\t\tIs not connected anymore!");
+                connectedSockets.remove(s);
+            }
+            stream = s.getOutputStream();
+
+            stream.write(command.getName().getBytes(StandardCharsets.UTF_8));
+            stream.flush();
+
+            LOGGER.info("[SERVER]\t\t\tCommand: " + command.toString() + " sent to: " + s.toString());
+
+
+        }catch (Exception ex){
+            LOGGER.error("[SERVER]\t\t\tERROR:" + ex.getMessage());
+            LOGGER.error("[SERVER]\t\t\tRestart Mbot with ip: " + command.getSocket());
+
+            return false;
         }
 
         return true;
+    }
+
+    public boolean SendSensorDataToClient(MbotEntity m){
+        String clientSocketString = BroadcastServer.getClientSocket().split(":")[0];
+
+        try{
+
+            InetAddress clientSocket = InetAddress.getByAddress(clientSocketString.getBytes(StandardCharsets.UTF_8));
+
+            Socket s = TetermineRightSocketClient(clientSocket);
+
+            if(s == null){
+                LOGGER.info("[SERVER]\t\t\tThere was no such client registered: " + clientSocket.toString());
+                return false;
+            }
+
+            stream = s.getOutputStream();
+            stream.write(mapper.writeValueAsBytes(m));
+            stream.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        return true;
+    }
+
+
+
+    private void IsStillConnected() throws IOException {
+        for(Socket s : connectedSockets){
+            if(!s.isConnected()){
+                s.close();
+            }
+        }
+    }
+
+    //IF IP IS ALREADY IN LIST SKIP ACTIONS
+    private boolean IsRegisteredSocket(Socket address){
+        if(address == null){
+            return false;
+        }
+
+        for(Socket s : connectedSockets){
+            if(Objects.equals(s.getInetAddress(), address.getInetAddress())){
+                return true;
+            }
+        }
+
+        connectedSockets.add(address);
+
+        return false;
+    }
+
+    private boolean IsRegisteredString(String socket){
+        for(Socket s : connectedSockets) {
+            if (Objects.equals(s.getInetAddress().toString(), socket)) {
+
+                if(!s.isConnected()){
+                    connectedSockets.remove(s);
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private Socket TetermineRightSocketMbot(Command command){
+        if(connectedSockets.isEmpty()){
+            LOGGER.error("[SERVER]\t\t\tNO SOCKETS!");
+        }
+
+        for (Socket connectedSocket : connectedSockets) {
+            if (IsRegisteredString(command.getSocket())) {
+                return connectedSocket;
+            }
+        }
+
+        LOGGER.error("[SERVER]\t\t\tNo Mbot-Sockets matching!");
+
+        return null;
+    }
+
+    private Socket TetermineRightSocketClient(InetAddress address){
+        for(Socket s : connectedSockets){
+            if(Objects.equals(s.getInetAddress().toString(), address.toString())){
+                return s;
+            }
+        }
+
+        LOGGER.info("[SERVER]\t\t\tNo Client-Sockets matching!");
+
+        return null;
     }
 
     public static Server getServer(){
@@ -131,8 +199,6 @@ public class Server {
 
         return INSTANCE;
     }
-
-
 
     public void addToCommandList(Command m){
         this.commandList.add(m);

@@ -2,13 +2,10 @@ package com.mongodb.starter.Networking;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class BroadcastServer {
     private static String clientSocket;
@@ -21,12 +18,11 @@ public class BroadcastServer {
     public static void RUN(){
         // Define the port number to listen on
         int port = 5595;
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         try {
             // Create a socket to listen for broadcasts UDP
             DatagramSocket socket = new DatagramSocket(port);
-            LOGGER.info("[BROADCAST]\tListening for broadcast messages on port " + port);
+            LOGGER.info("[BROADCAST]\t\tListening for broadcast messages on port " + port);
 
             while (true) {
                 // Create a buffer to store incoming data
@@ -46,7 +42,7 @@ public class BroadcastServer {
                 int senderPort = packet.getPort();
 
                 // Print the received message and sender's information
-                LOGGER.info("[BROADCAST]\tReceived message from " + senderAddress + ":" + senderPort + " - " + receivedMessage);
+                LOGGER.info("[BROADCAST]\t\tReceived message from " + senderAddress + ":" + senderPort + " - " + receivedMessage);
 
 
                 if (receivedMessage.trim().equals("ACM 6000")){
@@ -54,29 +50,27 @@ public class BroadcastServer {
                     byte[] responseData = responseMessage.getBytes(StandardCharsets.UTF_8);
                     DatagramPacket responsePacket = new DatagramPacket(responseData, responseData.length, senderAddress, 6000);
                     socket.send(responsePacket);
-                    LOGGER.info("[BROADCAST]\tResponse: " + senderAddress + ":" + senderPort + " - " + responseMessage);
+                    LOGGER.info("[BROADCAST]\t\tResponse: " + senderAddress + ":" + senderPort + " - " + responseMessage);
                     mbotSockets.add(senderAddress);
                 }
 
                 if(receivedMessage.trim().equals("ACC")){
-                    String responseMessage = "ACC";
+                    String responseMessage = "ACCACK";
                     byte[] responseData = responseMessage.getBytes(StandardCharsets.UTF_8);
                     DatagramPacket responsePacket = new DatagramPacket(responseData, responseData.length, senderAddress, senderPort);
                     socket.send(responsePacket);
-                    LOGGER.info("[BROADCAST]\tResponse: " + senderAddress + ":" + senderPort + " - " + responseMessage);
+                    LOGGER.info("[BROADCAST]\t\tResponse: " + senderAddress + ":" + senderPort + " - " + responseMessage);
                     clientSocket = senderAddress + ":" + senderPort;
                 }
             }
         } catch (IOException e) {
-           LOGGER.error("[BROADCAST]\tError: " + e.getMessage());
-            e.printStackTrace();
+           LOGGER.error("[BROADCAST]\t\tError: " + e.getMessage());
         }catch(IllegalArgumentException e){
-           LOGGER.error(e.getMessage());
-            e.printStackTrace();
+           LOGGER.error("[BROADCAST]\t\t" + e.getMessage());
         }
     }
 
-    public static String getClientSockets(){
+    public static String getClientSocket(){
         return clientSocket;
     }
 

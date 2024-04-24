@@ -3,10 +3,7 @@ package com.mongodb.starter.models;
 import org.bson.types.ObjectId;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class MbotEntity {
     private float ultrasonic;
@@ -16,21 +13,23 @@ public class MbotEntity {
     private int shake;
     private int light;
     private ObjectId id;
+    private String IP;
 
     public MbotEntity(){}
 
     public MbotEntity(float ultrasonic, ArrayList<Integer> angle, int sound, ArrayList<Integer> front_light_sensors, int shake,
-                      int light){
+                      int light, String IP){
         this.ultrasonic = ultrasonic;
         this.angles = angle;
         this.sound = sound;
         this.front_light_sensors = front_light_sensors;
         this.shake = shake;
         this.light = light;
+        this.IP = IP;
     }
 
     public MbotEntity(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> front_light_sensors, int shake,
-                      int light, ObjectId id) {
+                      int light, ObjectId id, String IP) {
         this.ultrasonic = ultrasonic;
         this.angles = front_light_sensors;
         this.sound = sound;
@@ -38,6 +37,7 @@ public class MbotEntity {
         this.shake = shake;
         this.light = light;
         this.id = id;
+        this.IP = IP;
     }
 
     public float getUltrasonic() {
@@ -64,6 +64,15 @@ public class MbotEntity {
 
     public MbotEntity setSound(int sound) {
         this.sound = sound;
+        return this;
+    }
+
+    public String getIP(){
+        return this.IP;
+    }
+
+    public MbotEntity setIP(String IP){
+        this.IP = IP;
         return this;
     }
 

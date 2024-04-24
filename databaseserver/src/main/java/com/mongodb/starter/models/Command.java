@@ -1,32 +1,21 @@
 package com.mongodb.starter.models;
 
-import java.net.InetAddress;
-
 public class Command {
-    private int id;
+
+    //Refactor: update command to fitting class
     private String name;
     private String socket;
 
 
-    public Command(int id, String name, String socket) {
-        this.id = id;
+    public Command(String name, String socket) {
         this.name = name;
         this.socket = socket;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     @Override
     public String toString() {
         return "Command{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
+                "name='" + name + '\'' +
                 ", socket='" + socket +'\'' +
                 '}';
     }
@@ -35,15 +24,7 @@ public class Command {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getSocket() {
         return socket;
-    }
-
-    public void setSocket(String  socket) {
-        this.socket = socket;
     }
 }
