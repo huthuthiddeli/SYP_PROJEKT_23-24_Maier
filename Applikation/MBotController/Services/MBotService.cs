@@ -14,6 +14,8 @@ using System.Diagnostics;
 using Avalonia.Controls;
 using System.Net.Http.Headers;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.IO;
 
 namespace MBotController.Services
 {
@@ -25,7 +27,8 @@ namespace MBotController.Services
         public static Command? Command { get; set; }
         public static MBot? CurrentBot { get; set; }
         private object _lock = new object();
-        public List<MBot> MBots { get; set; } = new List<MBot>();
+        public static List<MBot> MBots { get; set; } = new List<MBot>();
+        public static TcpClient TcpClient { get; set; }
         //TODO: Get MBots from server, otherwise use test data for debug purposes
 
         private MBotService()
@@ -34,7 +37,6 @@ namespace MBotController.Services
 
             SendCommand();
         }
-
         private void SetItems()
         {
             /*this.MBots = new List<MBot>()
@@ -44,8 +46,10 @@ namespace MBotController.Services
                 new MBot("192.168.0.3", 30, 5.99, new List<int>(){1,2,3,4 }, 22, new List<int>(){4,3,2,1 }, 57, 24)
             };*/
 
-            var ServerEp = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 5595);
-            UdpClient udpClient = new UdpClient(ServerEp);
+            //var serverEP = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 5595);
+            IPAddress ip = GetLocalIP();
+            var serverEP = new IPEndPoint(ip, 5595);
+            UdpClient udpClient = new UdpClient(serverEP);
             udpClient.EnableBroadcast = true;
             try
             {
@@ -57,7 +61,7 @@ namespace MBotController.Services
                     udpClient.Send(sendBytes, sendBytes.Length, IPAddress.Broadcast.ToString(), 5595);
 
                     //IPEndPoint object will allow us to read datagrams sent from any source.
-                    IPEndPoint RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, 5595);
+                    IPEndPoint RemoteIpEndPoint = null;// new IPEndPoint(IPAddress.Any, 5595);
 
                     // Blocks until a message returns on this socket from a remote host.    
                     byte[] receiveBytes = udpClient.Receive(ref RemoteIpEndPoint);
@@ -74,6 +78,8 @@ namespace MBotController.Services
                     {
                         //No success
                     }
+
+                    Thread.Sleep(1000);
                 }
             }
             catch (Exception e)
@@ -89,53 +95,135 @@ namespace MBotController.Services
             string json = client.GetStringAsync($"http://{IP}:8080/api/mbots").Result;
             var res = client.GetFromJsonAsync<List<MBot>>($"http://{IP}:8080/api/mbots");
             var list = res.Result;
-            MBots.AddRange(list);
+            MBots = list;
 
             MBots.ForEach(mbot => mbot.RandomColor());
 
-            /*try
+            TcpClient = new TcpClient();
+            TcpClient.Connect(IPAddress.Parse(IP), 5000);
+            
+
+            ReceiveData();
+        }
+
+        public static IPAddress? GetLocalIP()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
             {
-                string serverIP = IP;
-                int serverPort =  Port;
-
-                TcpClient socket = new TcpClient(serverIP, serverPort);
-                socket.ReceiveBufferSize = 1024; // Setze die Puffergröße für den Datenempfang
-
-                NetworkStream stream = socket.GetStream();
-
-                // Registriere den Event Handler für das Empfangen von Daten
-                byte[] receivedData = new byte[1024];
-                stream.BeginRead(receivedData, 0, receivedData.Length, new AsyncCallback(OnDataReceived), new StateObject { Buffer = receivedData, Stream = stream });
-
-                // Sende Daten an den Server
-                string message = "Hallo, Server!";
-                byte[] data = Encoding.ASCII.GetBytes(message);
-                stream.Write(data, 0, data.Length);
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip;
+                }
             }
-            catch (Exception e)
+
+            return null;
+        }
+
+        public static async void ReceiveData()
+        {
+            /*byte[] bytes = new Byte[256];
+            string data = null;
+
+            // Perform a blocking call to accept requests.
+            // You could also use server.AcceptSocket() here.
+            using TcpClient client = TcpClient.AcceptTcpClient();
+
+            while (true)
             {
+                data = null;
 
+                // Get a stream object for reading and writing
+                NetworkStream stream = client.GetStream();
+
+                int i;
+
+                // Loop to receive all the data sent by the client.
+                while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
+                {
+                    // Translate data bytes to a ASCII string.
+                    data = Encoding.ASCII.GetString(bytes, 0, i);
+
+                    List<MBot>? list = JsonSerializer.Deserialize<List<MBot>>(data);
+
+                    if (list is not null)
+                    {
+                        //Update and Add MBots
+                        foreach (MBot mbot in list)
+                        {
+                            MBot? clone = MBots.Find(m => m.IP == mbot.IP);
+
+                            if (clone is not null)
+                            {
+                                clone.Copy(mbot);
+                            }
+                            else
+                            {
+                                MBots.Add(mbot);
+                            }
+                        }
+
+                        //Remove MBots
+                        foreach (MBot mbot in MBots)
+                        {
+                            MBot? clone = list.Find(m => m.IP == mbot.IP);
+
+                            if (clone is null)
+                            {
+                                MBots.Remove(mbot);
+                            }
+                        }
+                    }
+                }
             }*/
-        }
 
-        private async void OnDataReceived(IAsyncResult ar)
-        {
-            StateObject state = (StateObject)ar.AsyncState;
-            NetworkStream stream = state.Stream;
-            int bytesRead = stream.EndRead(ar);
-            string receivedMessage = Encoding.ASCII.GetString(state.Buffer, 0, bytesRead);
-            Debug.WriteLine("Daten empfangen: " + receivedMessage);
-        }
 
-        private class StateObject
-        {
-            public byte[] Buffer { get; set; }
-            public NetworkStream Stream { get; set; }
-        }
+            while (true)
+            {
+                Stream stream = TcpClient.GetStream();
+                // Buffer to store the response bytes.
+                byte[] data = new byte[256];
 
-        public async void receiveData()
-        {
+                // String to store the response ASCII representation.
+                string json = string.Empty;
 
+                // Read the first batch of the TcpServer response bytes.
+                int bytes = stream.Read(data, 0, data.Length);
+                json = Encoding.ASCII.GetString(data, 0, bytes);
+
+                JsonSerializerOptions options = new JsonSerializerOptions();
+                options.PropertyNameCaseInsensitive = true;
+                List<MBot> list = JsonSerializer.Deserialize<List<MBot>>(json, options);
+
+                if (list is not null)
+                {
+                    //Update and Add MBots
+                    foreach (MBot mbot in list)
+                    {
+                        MBot? clone = MBots.Find(m => m.IP == mbot.IP);
+
+                        if (clone is not null)
+                        {
+                            clone.Copy(mbot);
+                        }
+                        else
+                        {
+                            MBots.Add(mbot);
+                        }
+                    }
+
+                    //Remove MBots
+                    foreach (MBot mbot in MBots)
+                    {
+                        MBot? clone = list.Find(m => m.IP == mbot.IP);
+
+                        if (clone is null)
+                        {
+                            MBots.Remove(mbot);
+                        }
+                    }
+                }
+            }
         }
 
         public static async void SendCommand()

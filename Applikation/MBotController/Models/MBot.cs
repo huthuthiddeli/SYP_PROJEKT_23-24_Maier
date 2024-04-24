@@ -75,5 +75,16 @@ namespace MBotController.Models
                 });
             }
         }
+
+        public void Copy(MBot bot)
+        {
+            this.Velocity = bot.Velocity;
+            this.Sound = bot.Sound;
+            this.Ultrasonic = bot.Ultrasonic;
+            this.Angles = bot.Angles;
+            this.LightSensors = bot.LightSensors;
+            this.Light = bot.Light;
+            this.Shake = bot.Shake;
+        }
     }
 }
