@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
@@ -10,11 +9,6 @@ using MBotController.Models;
 using System.Net.Http;
 using System.Text.Json;
 using System.Net.Http.Json;
-using System.Diagnostics;
-using Avalonia.Controls;
-using System.Net.Http.Headers;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.IO;
 
 namespace MBotController.Services
@@ -27,12 +21,14 @@ namespace MBotController.Services
         public static Command? Command { get; set; }
         public static MBot? CurrentBot { get; set; }
         private object _lock = new object();
-        public static List<MBot> MBots { get; set; } = new List<MBot>();
+        public static List<MBot> MBots { get; set; }
         public static TcpClient TcpClient { get; set; }
         //TODO: Get MBots from server, otherwise use test data for debug purposes
 
         private MBotService()
         {
+            MBots = new List<MBot>();
+
             this.SetItems();
 
             SendCommand();
@@ -95,15 +91,15 @@ namespace MBotController.Services
             string json = client.GetStringAsync($"http://{IP}:8080/api/mbots").Result;
             var res = client.GetFromJsonAsync<List<MBot>>($"http://{IP}:8080/api/mbots");
             var list = res.Result;
-            MBots = list;
+            MBots.AddRange(list);
 
             MBots.ForEach(mbot => mbot.RandomColor());
 
             TcpClient = new TcpClient();
             TcpClient.Connect(IPAddress.Parse(IP), 5000);
-            
 
-            ReceiveData();
+            new Thread(ReceiveData).Start();
+            //ReceiveData();
         }
 
         public static IPAddress? GetLocalIP()
@@ -122,62 +118,6 @@ namespace MBotController.Services
 
         public static async void ReceiveData()
         {
-            /*byte[] bytes = new Byte[256];
-            string data = null;
-
-            // Perform a blocking call to accept requests.
-            // You could also use server.AcceptSocket() here.
-            using TcpClient client = TcpClient.AcceptTcpClient();
-
-            while (true)
-            {
-                data = null;
-
-                // Get a stream object for reading and writing
-                NetworkStream stream = client.GetStream();
-
-                int i;
-
-                // Loop to receive all the data sent by the client.
-                while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
-                {
-                    // Translate data bytes to a ASCII string.
-                    data = Encoding.ASCII.GetString(bytes, 0, i);
-
-                    List<MBot>? list = JsonSerializer.Deserialize<List<MBot>>(data);
-
-                    if (list is not null)
-                    {
-                        //Update and Add MBots
-                        foreach (MBot mbot in list)
-                        {
-                            MBot? clone = MBots.Find(m => m.IP == mbot.IP);
-
-                            if (clone is not null)
-                            {
-                                clone.Copy(mbot);
-                            }
-                            else
-                            {
-                                MBots.Add(mbot);
-                            }
-                        }
-
-                        //Remove MBots
-                        foreach (MBot mbot in MBots)
-                        {
-                            MBot? clone = list.Find(m => m.IP == mbot.IP);
-
-                            if (clone is null)
-                            {
-                                MBots.Remove(mbot);
-                            }
-                        }
-                    }
-                }
-            }*/
-
-
             while (true)
             {
                 Stream stream = TcpClient.GetStream();
@@ -193,7 +133,7 @@ namespace MBotController.Services
 
                 JsonSerializerOptions options = new JsonSerializerOptions();
                 options.PropertyNameCaseInsensitive = true;
-                List<MBot> list = JsonSerializer.Deserialize<List<MBot>>(json, options);
+                List<MBot>? list = JsonSerializer.Deserialize<List<MBot>>(json, options);
 
                 if (list is not null)
                 {
@@ -223,31 +163,43 @@ namespace MBotController.Services
                         }
                     }
                 }
+
+                Thread.Sleep(100);
             }
         }
 
         public static async void SendCommand()
         {
             HttpClient client = new HttpClient();
-            Command = new Command("0;0", "/" + CurrentBot);
+            if (CurrentBot is null)
+            {
+                Command = null;
+            }
+            else
+            {
+                Command = new Command("0;0", "/" + CurrentBot);
+            }
 
             while (true)
             {
                 if (Command is not null)
                 {
-                    Command.Name += "!";
+                    if (Command.Name[Command.Name.Length - 1] != '!')
+                    {
+                        Command.Name += "!";
+                    }
 
                     string json = JsonSerializer.Serialize(Command);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
                     var res = await client.PostAsync($"http://{IP}:8080/api/mbot/commandQueue", content);
                 }
 
-                if (CurrentBot is not null && Command is not null && Command.Name == "0;0!")
+                if (Command is not null && Command.Name == "0;0!")
                 {
                     Command = null;
                 }
 
-                await Task.Delay(50);
+                await Task.Delay(333);
             }
         }
     }
