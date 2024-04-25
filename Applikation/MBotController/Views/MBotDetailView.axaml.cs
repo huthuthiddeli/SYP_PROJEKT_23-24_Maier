@@ -52,19 +52,19 @@ internal partial class MBotDetailView : UserControl
         Command cmd;
         if (e.Key == Key.W)
         {
-            cmd = new("1;0.5", "/" + context.Bot.IP);
+            cmd = new("0;1", "/" + context.Bot.IP);
         }
         else if (e.Key == Key.A)
         {
-            cmd = new("0.5;-1", "/" + context.Bot.IP);
+            cmd = new("-1;0", "/" + context.Bot.IP);
         }
         else if (e.Key == Key.S)
         {
-            cmd = new("0.5;1", "/" + context.Bot.IP);
+            cmd = new("0;-1", "/" + context.Bot.IP);
         }
         else if (e.Key == Key.D)
         {
-            cmd = new("-1;0.5", "/" + context.Bot.IP);
+            cmd = new("1;0", "/" + context.Bot.IP);
         }
         else
         {
@@ -109,7 +109,7 @@ internal partial class MBotDetailView : UserControl
             normalizedY = Math.Round(normalizedY, 2);
 
             var context = this.DataContext as MBotDetailViewModel;
-            MBotService.Command = new Command($"{normalizedX.ToString(CultureInfo.InvariantCulture)};{normalizedY.ToString(CultureInfo.InvariantCulture)}", "/" + context.Bot.IP);
+            MBotService.Command = new Command($"{(-normalizedY).ToString(CultureInfo.InvariantCulture)};{(normalizedX).ToString(CultureInfo.InvariantCulture)}", context.Bot.IP);
             Console.WriteLine();
         }
     }
@@ -120,6 +120,6 @@ internal partial class MBotDetailView : UserControl
         Handle.RenderTransform = new TranslateTransform(0, 0);
 
         var context = this.DataContext as MBotDetailViewModel;
-        MBotService.Command = new Command("0;0", "/" + context.Bot.IP);
+        MBotService.Command = new Command("0;0", context.Bot.IP);
     }
 }
