@@ -26,7 +26,7 @@ public class UDP_Server {
     private UDP_Server(){}
 
     public void RUN(){
-        int PORT = 6000;
+        int PORT = 9000;
 
         try{
             serverSocket = new DatagramSocket(PORT);
@@ -47,7 +47,7 @@ public class UDP_Server {
 
                 String awnser = "Alive";
                 byte[] responseData = awnser.getBytes(StandardCharsets.UTF_8);
-                DatagramPacket responsePackage = new DatagramPacket(responseData, responseData.length);
+                DatagramPacket responsePackage = new DatagramPacket(responseData, responseData.length, packet.getAddress(), 6000);
 
                 serverSocket.send(responsePackage);
 
@@ -78,18 +78,20 @@ public class UDP_Server {
             InetAddress MbotAdress = GetRigtMbotSocket(m);
 
             if(MbotAdress == null){
-                LOGGER.info("[UDP_Server]\n\nNo Mbot with this address has been found: " + m.getSocket());
+                LOGGER.info("[UDP_Server]\t\tNo Mbot with this address has been found: " + m.getSocket());
+                return false;
             }
 
-            DatagramPacket packet = new DatagramPacket(buffer, buffer.length, MbotAdress, 4000);
-
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length, MbotAdress, 6000);
 
             DatagramSocket socket = new DatagramSocket();
 
             socket.send(packet);
+            LOGGER.info("[UDP_SERVER]\t\tPacket sent: " + packet.getAddress());
 
         }catch (IOException ex){
             LOGGER.info("[UDP_Server]\t\tError: " + ex.getMessage());
+            return false;
         }
 
         return true;

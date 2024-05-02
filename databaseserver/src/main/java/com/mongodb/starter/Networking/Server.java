@@ -101,8 +101,6 @@ public class Server {
 
         try{
 
-            InetAddress clientSocket = InetAddress.getByAddress(clientSocketString.getBytes(StandardCharsets.UTF_8));
-
             Socket s = TetermineRightSocketClient(clientSocket);
 
             if(s == null){
@@ -113,8 +111,11 @@ public class Server {
             stream = s.getOutputStream();
             stream.write(mapper.writeValueAsBytes(m));
             stream.flush();
+
+            LOGGER.info("[SERVER]\t\t\tData sent to: " + s.getInetAddress().toString());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            LOGGER.error("[SERVER]\t\t\t Error sending data to client (SensordatatTOClient): " + e.getMessage());
+            return false;
         }
 
 
@@ -182,6 +183,8 @@ public class Server {
 
     private Socket TetermineRightSocketClient(InetAddress address){
         for(Socket s : connectedSockets){
+            LOGGER.info(s.getInetAddress().toString() +"  " + address.toString());
+            LOGGER.info(String.valueOf(s.getInetAddress().toString().equals(address.toString())));
             if(Objects.equals(s.getInetAddress().toString(), address.toString())){
                 return s;
             }

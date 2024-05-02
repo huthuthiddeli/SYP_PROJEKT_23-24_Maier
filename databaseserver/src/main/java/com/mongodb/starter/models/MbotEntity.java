@@ -6,19 +6,19 @@ import java.lang.reflect.Array;
 import java.util.*;
 
 public class MbotEntity {
+    private ObjectId id;
     private float ultrasonic;
     private ArrayList<Integer> angles;
     private int sound;
     private ArrayList<Integer> front_light_sensors;
     private int shake;
     private int light;
-    private ObjectId id;
     private String IP;
 
     public MbotEntity(){}
 
     public MbotEntity(float ultrasonic, ArrayList<Integer> angle, int sound, ArrayList<Integer> front_light_sensors, int shake,
-                      int light, String IP){
+                      int light, String IP, ObjectId id){
         this.ultrasonic = ultrasonic;
         this.angles = angle;
         this.sound = sound;
@@ -26,18 +26,17 @@ public class MbotEntity {
         this.shake = shake;
         this.light = light;
         this.IP = IP;
+        this.id = id;
     }
 
-    public MbotEntity(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> front_light_sensors, int shake,
-                      int light, ObjectId id, String IP) {
+    public MbotEntity(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> frontLightSensors, int shake, int light, String ip) {
         this.ultrasonic = ultrasonic;
-        this.angles = front_light_sensors;
+        this.angles = angles;
         this.sound = sound;
-        this.front_light_sensors = front_light_sensors;
+        this.front_light_sensors = frontLightSensors;
         this.shake = shake;
         this.light = light;
-        this.id = id;
-        this.IP = IP;
+        this.IP = ip;
     }
 
     public float getUltrasonic() {
@@ -76,15 +75,6 @@ public class MbotEntity {
         return this;
     }
 
-    public ObjectId getId(){
-        return this.id;
-    }
-
-    public MbotEntity setId(ObjectId id){
-        this.id = id;
-        return this;
-    }
-
     public ArrayList<Integer> getFront_light_sensors() {
         return front_light_sensors;
     }
@@ -112,6 +102,14 @@ public class MbotEntity {
         return this;
     }
 
+    public MbotEntity setId(ObjectId id){
+        this.id = id;
+        return this;
+    }
+
+    public ObjectId getId(){
+        return this.id;
+    }
 
     @Override
     public boolean equals(Object o) {

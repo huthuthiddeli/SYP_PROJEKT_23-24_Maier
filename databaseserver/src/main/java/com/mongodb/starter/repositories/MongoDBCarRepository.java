@@ -10,7 +10,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.starter.models.MbotEntity;
-import com.mongodb.starter.repositories.MbotRepository;
 import jakarta.annotation.PostConstruct;
 import org.bson.BsonDocument;
 import org.bson.types.ObjectId;
@@ -18,8 +17,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.in;
 import static com.mongodb.client.model.ReturnDocument.AFTER;
@@ -41,21 +38,21 @@ public class MongoDBCarRepository implements MbotRepository {
 
     @PostConstruct
     void init() {
-        personCollection = client.getDatabase("SYP_2024_FAL_EIG").getCollection("MBotEntry", MbotEntity.class);
+        personCollection = client.getDatabase("SYP_2024_MAIER").getCollection("mbots", MbotEntity.class);
     }
 
     @Override
-    public MbotEntity save(MbotEntity MbotEntity) {
-        MbotEntity.setId(new ObjectId());
-        personCollection.insertOne(MbotEntity);
-        return MbotEntity;
+    public MbotEntity save(MbotEntity personEntity) {
+        personEntity.setId(new ObjectId());
+        personCollection.insertOne(personEntity);
+        return personEntity;
     }
 
     @Override
     public List<MbotEntity> saveAll(List<MbotEntity> personEntities) {
         try (ClientSession clientSession = client.startSession()) {
             return clientSession.withTransaction(() -> {
-                personEntities.forEach(c -> c.setId(new ObjectId()));
+                personEntities.forEach(p -> p.setId(new ObjectId()));
                 personCollection.insertMany(clientSession, personEntities);
                 return personEntities;
             }, txnOptions);
@@ -74,6 +71,7 @@ public class MongoDBCarRepository implements MbotRepository {
 
     @Override
     public MbotEntity findOne(String id) {
+        System.out.println("ID: " + id);
         return personCollection.find(eq("_id", new ObjectId(id))).first();
     }
 
@@ -105,15 +103,16 @@ public class MongoDBCarRepository implements MbotRepository {
     }
 
     @Override
-    public MbotEntity update(MbotEntity mbotEntity) {
+    public MbotEntity update(MbotEntity personEntity) {
         FindOneAndReplaceOptions options = new FindOneAndReplaceOptions().returnDocument(AFTER);
-        return personCollection.findOneAndReplace(eq("_id", mbotEntity.getId()), mbotEntity, options);
+        return personCollection.findOneAndReplace(eq("_id", personEntity.getId()), personEntity, options);
     }
 
     @Override
     public long update(List<MbotEntity> personEntities) {
         List<ReplaceOneModel<MbotEntity>> writes = personEntities.stream()
-                .map(p -> new ReplaceOneModel<>(eq("_id", p.getId()), p))
+                .map(p -> new ReplaceOneModel<>(eq("_id", p.getId()),
+                        p))
                 .toList();
         try (ClientSession clientSession = client.startSession()) {
             return clientSession.withTransaction(
@@ -121,10 +120,6 @@ public class MongoDBCarRepository implements MbotRepository {
         }
     }
 
-    @Override
-    public double getAverageAge() {
-        return 0;
-    }
 
     private List<ObjectId> mapToObjectIds(List<String> ids) {
         return ids.stream().map(ObjectId::new).toList();

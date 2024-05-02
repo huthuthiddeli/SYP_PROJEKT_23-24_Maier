@@ -15,6 +15,7 @@ public record MbotDTO(float ultrasonic, ArrayList<Integer> angles, int sound, Ar
     }
 
     public MbotEntity toMbotEntity() {
+        //ObjectId _id = objectID == null ? new ObjectId() : new ObjectId(objectID);
         return new MbotEntity(ultrasonic, angles, sound, front_light_sensors, shake, light, IP);
     }
 
