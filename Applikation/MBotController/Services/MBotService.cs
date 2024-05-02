@@ -10,20 +10,27 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Net.Http.Json;
 using System.IO;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Text.Json.Serialization;
 
 namespace MBotController.Services
 {
+    /// <summary>
+    /// Responsible for data traffic with server.
+    /// Implemented as singleton.
+    /// </summary>
     internal class MBotService
     {
-        public static MBotService Instance { get; } = new MBotService();
-        private static string IP { get; set; }
-        private static int Port { get; set; }
-        public static Command? Command { get; set; }
-        public static MBot? CurrentBot { get; set; }
+        private static MBotService _instance = new MBotService();
+        public static MBotService Instance { get => _instance; }
+        private string IP { get; set; }
+        private int Port { get; set; }
+        public Command? Command { get; set; }
+        public MBot? CurrentBot { get; set; }
         private object _lock = new object();
-        public static List<MBot> MBots { get; set; }
-        public static TcpClient TcpClient { get; set; }
-        //TODO: Get MBots from server, otherwise use test data for debug purposes
+        public List<MBot> MBots { get; set; }
+        public TcpClient TcpClient { get; set; }
+        public Thread Thread { get; set; }
 
         private MBotService()
         {
@@ -33,6 +40,21 @@ namespace MBotController.Services
 
             SendCommand();
         }
+
+        /// <summary>
+        /// Responsible to reload the data traffic after server shutdown.
+        /// </summary>
+        public static void Reload()
+        {
+            Instance.Thread.Abort();
+            Instance.TcpClient.Close();
+
+            _instance = new MBotService();
+        }
+
+        /// <summary>
+        /// Makes a broadcast to the server, establishes a TCP connection with it and receives the MBots.
+        /// </summary>
         private void SetItems()
         {
             /*this.MBots = new List<MBot>()
@@ -42,7 +64,6 @@ namespace MBotController.Services
                 new MBot("192.168.0.3", 30, 5.99, new List<int>(){1,2,3,4 }, 22, new List<int>(){4,3,2,1 }, 57, 24)
             };*/
 
-            //var serverEP = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 5595);
             IPAddress ip = GetLocalIP();
             var serverEP = new IPEndPoint(ip, 5595);
             UdpClient udpClient = new UdpClient(serverEP);
@@ -51,28 +72,20 @@ namespace MBotController.Services
             {
                 while (true)
                 {
-                    // Sends a message to the host to which you have connected.
                     byte[] sendBytes = Encoding.UTF8.GetBytes("ACC");
 
                     udpClient.Send(sendBytes, sendBytes.Length, IPAddress.Broadcast.ToString(), 5595);
 
-                    //IPEndPoint object will allow us to read datagrams sent from any source.
-                    IPEndPoint RemoteIpEndPoint = null;// new IPEndPoint(IPAddress.Any, 5595);
+                    IPEndPoint RemoteIpEndPoint = null;
 
-                    // Blocks until a message returns on this socket from a remote host.    
                     byte[] receiveBytes = udpClient.Receive(ref RemoteIpEndPoint);
                     string returnData = Encoding.ASCII.GetString(receiveBytes);
 
                     if (returnData == "ACCACK")
                     {
-                        //Success
                         IP = RemoteIpEndPoint.Address.ToString();
                         Port = RemoteIpEndPoint.Port;
                         break;
-                    }
-                    else
-                    {
-                        //No success
                     }
 
                     Thread.Sleep(1000);
@@ -88,8 +101,15 @@ namespace MBotController.Services
             }
 
             HttpClient client = new HttpClient();
+
+            JsonSerializerOptions options = new JsonSerializerOptions();
+            options.PropertyNameCaseInsensitive = true;
+            options.Converters.Add(new JsonStringEnumConverter());
+
             string json = client.GetStringAsync($"http://{IP}:8080/api/mbots").Result;
-            var res = client.GetFromJsonAsync<List<MBot>>($"http://{IP}:8080/api/mbots");
+            /*var test = JsonSerializer.Deserialize<List<MBot>>(json, options);*/
+
+            var res = client.GetFromJsonAsync<List<MBot>>($"http://{IP}:8080/api/mbots", options);
             var list = res.Result;
             MBots.AddRange(list);
 
@@ -98,10 +118,14 @@ namespace MBotController.Services
             TcpClient = new TcpClient();
             TcpClient.Connect(IPAddress.Parse(IP), 5000);
 
-            new Thread(ReceiveData).Start();
-            //ReceiveData();
+            this.Thread = new Thread(ReceiveData);
+            this.Thread.Start();
         }
 
+        /// <summary>
+        /// Calculates the current IP Address.
+        /// </summary>
+        /// <returns>IP Address in local network.</returns>
         public static IPAddress? GetLocalIP()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
@@ -116,59 +140,59 @@ namespace MBotController.Services
             return null;
         }
 
-        public static async void ReceiveData()
+        /// <summary>
+        /// Method responsible for getting data from server (TCP connection).
+        /// </summary>
+        public async void ReceiveData()
         {
             while (true)
             {
+                if (!TcpClient.Connected)
+                {
+                    //TODO: reload application
+                }
+
                 Stream stream = TcpClient.GetStream();
-                // Buffer to store the response bytes.
                 byte[] data = new byte[256];
 
-                // String to store the response ASCII representation.
-                string json = string.Empty;
-
-                // Read the first batch of the TcpServer response bytes.
-                int bytes = stream.Read(data, 0, data.Length);
-                json = Encoding.ASCII.GetString(data, 0, bytes);
+                int bytes = await stream.ReadAsync(data, 0, data.Length);
+                string json = Encoding.ASCII.GetString(data, 0, bytes);
 
                 JsonSerializerOptions options = new JsonSerializerOptions();
+                options.Converters.Add(new JsonStringEnumConverter());
                 options.PropertyNameCaseInsensitive = true;
-                List<MBot>? list = JsonSerializer.Deserialize<List<MBot>>(json, options);
+                MBot? updated = JsonSerializer.Deserialize<MBot>(json, options);
 
-                if (list is not null)
+                if (updated is null)
                 {
-                    //Update and Add MBots
-                    foreach (MBot mbot in list)
-                    {
-                        MBot? clone = MBots.Find(m => m.IP == mbot.IP);
+                    continue;
+                }
 
-                        if (clone is not null)
-                        {
-                            clone.Copy(mbot);
-                        }
-                        else
-                        {
-                            MBots.Add(mbot);
-                        }
-                    }
+                MBot? existing = MBots.Find(m => m.IP == updated.IP);
 
-                    //Remove MBots
-                    foreach (MBot mbot in MBots)
-                    {
-                        MBot? clone = list.Find(m => m.IP == mbot.IP);
+                if (existing is null)
+                {
+                    continue;
+                }
 
-                        if (clone is null)
-                        {
-                            MBots.Remove(mbot);
-                        }
-                    }
+                //Check if MBot got deleted
+                if (updated.Type == ConnectionType.CONNECTION_CLOSED)
+                {
+                    MBots.Remove(existing);
+                }
+                else
+                {
+                    existing.Copy(updated);
                 }
 
                 Thread.Sleep(100);
             }
         }
 
-        public static async void SendCommand()
+        /// <summary>
+        /// Sends the commands to the server.
+        /// </summary>
+        public async void SendCommand()
         {
             HttpClient client = new HttpClient();
             if (CurrentBot is null)

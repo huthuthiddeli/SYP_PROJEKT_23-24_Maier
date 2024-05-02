@@ -13,10 +13,12 @@ namespace MBotController.Models
     {
         [JsonIgnore]
         public static int Count { get; set; } = 0;
-        public int? ID { get; set; }
-        public string IP {  get; set; }
+        [JsonIgnore]
+        public IBrush BackgroundColor { get; private set; }
         [JsonIgnore]
         public string Name { get; set; }
+        public int? ID { get; set; }
+        public string IP {  get; set; }
         public int Velocity { get; set; } = 0;
         public double Ultrasonic { get; set; } = 0;
         public List<int> Angles { get; set; } = new List<int>();
@@ -25,8 +27,7 @@ namespace MBotController.Models
         public List<int> LightSensors { get; set;} = new List<int>();
         public int Shake { get; set; } = 0;
         public int Light { get; set; } = 0;
-        [JsonIgnore]
-        public IBrush BackgroundColor { get; private set; }
+        public ConnectionType Type { get; set; }
 
         public MBot() 
         {
