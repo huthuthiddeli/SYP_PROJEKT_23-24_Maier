@@ -2,16 +2,14 @@ package com.mongodb.starter.Networking;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.starter.dtos.ClientDTO;
 import com.mongodb.starter.dtos.MbotDTO;
 import com.mongodb.starter.models.Command;
-import com.mongodb.starter.models.MbotEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.*;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -27,7 +25,7 @@ public class Server {
     private OutputStream stream;
 
     private int prevSize = 0;
-
+    private int counter = 0;
 
     private Server(){}
 
@@ -61,7 +59,7 @@ public class Server {
         Socket s = TetermineRightSocketMbot(command);
 
         if(s == null){
-            LOGGER.info("[SERVER]\t\t\tSockets: " +  s.toString());
+            LOGGER.info("[SERVER]\t\t\tNo Socket detected!");
             return false;
         }
 
@@ -96,15 +94,34 @@ public class Server {
         return true;
     }
 
-    public boolean SendSensorDataToClient(MbotEntity m){
+    public boolean SendSensorDataToClient(MbotDTO m) throws JsonProcessingException {
+
+        if(BroadcastServer.getClientSocket() == null){
+            if(counter > 25){
+                LOGGER.info("[SERVER]\t\t\t No Client detected!");
+                counter = 0;
+            }else{
+                counter++;
+            }
+
+            return false;
+        }
+
+        Socket s = new Socket();
+
         String clientSocketString = BroadcastServer.getClientSocket().split(":")[0];
 
         try{
-
-            Socket s = TetermineRightSocketClient(clientSocket);
+            s = TetermineRightSocketClient(clientSocketString);
 
             if(s == null){
-                LOGGER.info("[SERVER]\t\t\tThere was no such client registered: " + clientSocket.toString());
+                LOGGER.info("[SERVER]\t\t\tThere was no client registered!");
+                return false;
+            }
+
+
+            if(!s.isConnected()){
+                BroadcastServer.ResetClient();
                 return false;
             }
 
@@ -112,9 +129,17 @@ public class Server {
             stream.write(mapper.writeValueAsBytes(m));
             stream.flush();
 
-            LOGGER.info("[SERVER]\t\t\tData sent to: " + s.getInetAddress().toString());
+
+            if(counter > 25){
+                LOGGER.info("[SERVER]\t\t\tData sent to: " + s.getInetAddress().toString());
+                counter = 0;
+            }else{
+                counter++;
+            }
+
         } catch (IOException e) {
             LOGGER.error("[SERVER]\t\t\t Error sending data to client (SensordatatTOClient): " + e.getMessage());
+            connectedSockets.remove(s);
             return false;
         }
 
@@ -181,11 +206,10 @@ public class Server {
         return null;
     }
 
-    private Socket TetermineRightSocketClient(InetAddress address){
+    private Socket TetermineRightSocketClient(String address){
+
         for(Socket s : connectedSockets){
-            LOGGER.info(s.getInetAddress().toString() +"  " + address.toString());
-            LOGGER.info(String.valueOf(s.getInetAddress().toString().equals(address.toString())));
-            if(Objects.equals(s.getInetAddress().toString(), address.toString())){
+            if(Objects.equals(s.getInetAddress().toString(), address)){
                 return s;
             }
         }

@@ -2,6 +2,7 @@ package com.mongodb.starter.controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.starter.ConnectionTypes;
 import com.mongodb.starter.Networking.BroadcastServer;
 import com.mongodb.starter.Networking.Server;
 import com.mongodb.starter.Networking.UDP_Server;
@@ -59,7 +60,7 @@ public class MbotController {
     public @ResponseBody MbotDTO postData(@RequestBody MbotDTO item) throws JsonProcessingException, IOException {
         try{
             lastPackage.put(item.toMbotEntity().getIP(), item);
-            server.SendSensorDataToClient(item.toMbotEntity());
+            server.SendSensorDataToClient(item);
 
             if(counter >= 25){
                 LOGGER.info("[MBOTController]\t:" + item.toString());
@@ -88,7 +89,7 @@ public class MbotController {
             if(counter >= 25){
                 LOGGER.info("[MBOTController]\t:" + item.toString());
                 LOGGER.info("[MbotController]\tData receivied!");
-                server.SendSensorDataToClient(item.toMbotEntity());
+                server.SendSensorDataToClient(item);
                 mbotService.save(item);
                 counter = 0;
             }
@@ -150,16 +151,14 @@ public class MbotController {
             LOGGER.info("[MbotController]\tTEST DATA SENT!");
             list.add(new ClientDTO(2.5f, new ArrayList<Integer>(Arrays.asList(1,2,3,6,8,9,99)), 3,
                     new ArrayList<Integer>(Arrays.asList(1,2,3,4,6))
-                    , 95, 22, "1.12.23.4"));
+                    , 95, 22, ConnectionTypes.MBOT_TEST_DATA, "1.12.23.4"));
         }else{
             LOGGER.info("[MbotController]\tNORMAL DATA SEND: ");
-
-            LOGGER.info(String.valueOf(BroadcastServer.getMbotSockets().size()));
 
             for(InetAddress s : BroadcastServer.getMbotSockets()){
                 list.add(new ClientDTO(0f, new ArrayList<Integer>(Arrays.asList(0,0,0,0,0,0,0)), 0,
                         new ArrayList<Integer>(Arrays.asList(0,0,0,0,0))
-                        , 0, 0, s.toString()));
+                        , 0, 0, ConnectionTypes.MBOT_TEST_DATA, s.toString()));
             }
         }
 

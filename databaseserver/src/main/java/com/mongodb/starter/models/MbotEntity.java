@@ -1,5 +1,6 @@
 package com.mongodb.starter.models;
 
+import com.mongodb.starter.ConnectionTypes;
 import org.bson.types.ObjectId;
 
 import java.lang.reflect.Array;
@@ -14,11 +15,12 @@ public class MbotEntity {
     private int shake;
     private int light;
     private String IP;
+    private ConnectionTypes type;
 
     public MbotEntity(){}
 
     public MbotEntity(float ultrasonic, ArrayList<Integer> angle, int sound, ArrayList<Integer> front_light_sensors, int shake,
-                      int light, String IP, ObjectId id){
+                      int light, String IP, ConnectionTypes type ,ObjectId id){
         this.ultrasonic = ultrasonic;
         this.angles = angle;
         this.sound = sound;
@@ -26,16 +28,18 @@ public class MbotEntity {
         this.shake = shake;
         this.light = light;
         this.IP = IP;
+        this.type = type;
         this.id = id;
     }
 
-    public MbotEntity(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> frontLightSensors, int shake, int light, String ip) {
+    public MbotEntity(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> frontLightSensors, int shake, int light, ConnectionTypes type, String ip) {
         this.ultrasonic = ultrasonic;
         this.angles = angles;
         this.sound = sound;
         this.front_light_sensors = frontLightSensors;
         this.shake = shake;
         this.light = light;
+        this.type = type;
         this.IP = ip;
     }
 
@@ -102,6 +106,15 @@ public class MbotEntity {
         return this;
     }
 
+    public ConnectionTypes getType(){
+        return this.type;
+    }
+
+    public MbotEntity setType(ConnectionTypes newType){
+        this.type = newType;
+        return this;
+    }
+
     public MbotEntity setId(ObjectId id){
         this.id = id;
         return this;
@@ -110,6 +123,7 @@ public class MbotEntity {
     public ObjectId getId(){
         return this.id;
     }
+
 
     @Override
     public boolean equals(Object o) {
