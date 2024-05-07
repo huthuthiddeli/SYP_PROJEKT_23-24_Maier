@@ -1,12 +1,13 @@
 package com.mongodb.starter.dtos;
 
+import com.mongodb.starter.ConnectionType;
 import com.mongodb.starter.models.MbotEntity;
 import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
 
 public record ClientDTO(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> front_light_sensors,
-                        int shake, int light, String IP) {
+                        int shake, int light, ConnectionType type, String IP) {
 
 
     public ClientDTO(MbotDTO c) {
