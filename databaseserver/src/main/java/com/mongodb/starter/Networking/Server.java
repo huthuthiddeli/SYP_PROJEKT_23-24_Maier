@@ -29,7 +29,7 @@ public class Server {
     private OutputStream stream;
 
     private int prevSize = 0;
-
+    private int counter = 0;
 
     private Server(){}
 
@@ -101,9 +101,11 @@ public class Server {
     public boolean SendSensorDataToClient(MbotEntity m){
         String clientSocketString = BroadcastServer.getClientSocket().split(":")[0];
 
+        Socket s = new Socket();
+
         try{
 
-            Socket s = TetermineRightSocketClient(clientSocket);
+            s = TetermineRightSocketClient(clientSocketString);
 
             if(s == null){
                 if(counter > 25){
@@ -123,8 +125,8 @@ public class Server {
             }
 
             stream = s.getOutputStream();
-
-            m = new MbotDTO(m.ultrasonic(), m.angles(), m.sound(), m.front_light_sensors(), m.shake(), m.light(), ConnectionType.CONNECTION_ALIVE, m.IP());
+            
+            m = new MbotDTO(m.getUltrasonic(), m.getAngles(), m.getSound(), m.getFront_light_sensors(), m.getShake(), m.getLight(), ConnectionType.CONNECTION_ALIVE, m.getIP()).toMbotEntity();
 
             stream.write(mapper.writeValueAsBytes(m));
             stream.flush();
@@ -200,11 +202,11 @@ public class Server {
         return null;
     }
 
-    private Socket TetermineRightSocketClient(InetAddress address){
+    private Socket TetermineRightSocketClient(String address){
         for(Socket s : connectedSockets){
             LOGGER.info(s.getInetAddress().toString() +"  " + address.toString());
-            LOGGER.info(String.valueOf(s.getInetAddress().toString().equals(address.toString())));
-            if(Objects.equals(s.getInetAddress().toString(), address.toString())){
+            LOGGER.info(String.valueOf(s.getInetAddress().toString().equals(address)));
+            if(Objects.equals(s.getInetAddress().toString(), address)){
                 return s;
             }
         }

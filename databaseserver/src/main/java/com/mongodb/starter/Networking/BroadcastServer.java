@@ -77,4 +77,8 @@ public class BroadcastServer {
     public static ArrayList<InetAddress> getMbotSockets(){
         return mbotSockets;
     }
+
+    public static void ResetClient(){
+        clientSocket = "";
+    }
 }
