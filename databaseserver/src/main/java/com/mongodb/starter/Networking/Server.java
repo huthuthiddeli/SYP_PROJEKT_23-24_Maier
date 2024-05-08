@@ -2,6 +2,8 @@ package com.mongodb.starter.Networking;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.starter.ConnectionType;
+import com.mongodb.starter.dtos.ClientDTO;
 import com.mongodb.starter.dtos.MbotDTO;
 import com.mongodb.starter.models.Command;
 import com.mongodb.starter.models.MbotEntity;
@@ -104,17 +106,34 @@ public class Server {
             Socket s = TetermineRightSocketClient(clientSocket);
 
             if(s == null){
-                LOGGER.info("[SERVER]\t\t\tThere was no such client registered: " + clientSocket.toString());
+                if(counter > 25){
+                    LOGGER.info("[SERVER]\t\t\tThere was no client registered!");
+                    counter = 0;
+                }else{
+                    counter++;
+                }
+
+                return false;
+            }
+
+
+            if(!s.isConnected()){
+                BroadcastServer.ResetClient();
                 return false;
             }
 
             stream = s.getOutputStream();
+
+            m = new MbotDTO(m.ultrasonic(), m.angles(), m.sound(), m.front_light_sensors(), m.shake(), m.light(), ConnectionType.CONNECTION_ALIVE, m.IP());
+
             stream.write(mapper.writeValueAsBytes(m));
             stream.flush();
 
             LOGGER.info("[SERVER]\t\t\tData sent to: " + s.getInetAddress().toString());
         } catch (IOException e) {
             LOGGER.error("[SERVER]\t\t\t Error sending data to client (SensordatatTOClient): " + e.getMessage());
+            LOGGER.error(e.toString());
+            connectedSockets.remove(s);
             return false;
         }
 
@@ -189,8 +208,13 @@ public class Server {
                 return s;
             }
         }
+        if(counter > 25){
+            LOGGER.info("[SERVER]\t\t\tNo Client-Sockets matching!");
+            counter = 0;
+        }else{
+            counter++;
+        }
 
-        LOGGER.info("[SERVER]\t\t\tNo Client-Sockets matching!");
 
         return null;
     }

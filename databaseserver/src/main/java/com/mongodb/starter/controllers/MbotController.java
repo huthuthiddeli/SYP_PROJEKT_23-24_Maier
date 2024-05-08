@@ -2,13 +2,13 @@ package com.mongodb.starter.controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.starter.ConnectionType;
 import com.mongodb.starter.Networking.BroadcastServer;
 import com.mongodb.starter.Networking.Server;
 import com.mongodb.starter.Networking.UDP_Server;
 import com.mongodb.starter.dtos.ClientDTO;
 import com.mongodb.starter.dtos.MbotDTO;
 import com.mongodb.starter.models.Command;
-import com.mongodb.starter.models.MbotEntity;
 import com.mongodb.starter.services.MbotService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.slf4j.Logger;
@@ -62,7 +62,8 @@ public class MbotController {
             server.SendSensorDataToClient(item.toMbotEntity());
 
             if(counter >= 25){
-                LOGGER.info("[MBOTController]\t:" + item.toString());
+                item = new MbotDTO(item.ultrasonic(), item.angles(), item.sound(), item.front_light_sensors(), item.shake(), item.light(), ConnectionType.MBOT_DB_PACKAGE, item.IP());
+                //LOGGER.info("[MBOTController]\t:" + item.toString());
                 LOGGER.info("[MbotController]\tData receivied!");
                 mbotService.save(item);
                 counter = 0;
@@ -109,18 +110,11 @@ public class MbotController {
             return false;
         }
 
-        /*
-        if(Objects.equals(prevCommand, command) && prevCommand == null){
-            return false;
-        }
-        */
-
         try{
             // TCP SOCKET FOR COMMANDS IS OUTDATED!
             if(server.SendCommandToClient(command)){
                 return false;
             }
-
 
             if(!udp_server.SendCommand(command)){
                 return false;
@@ -150,7 +144,7 @@ public class MbotController {
             LOGGER.info("[MbotController]\tTEST DATA SENT!");
             list.add(new ClientDTO(2.5f, new ArrayList<Integer>(Arrays.asList(1,2,3,6,8,9,99)), 3,
                     new ArrayList<Integer>(Arrays.asList(1,2,3,4,6))
-                    , 95, 22, "1.12.23.4"));
+                    , 95, 22, ConnectionType.MBOT_TEST_DATA, "1.12.23.4"));
         }else{
             LOGGER.info("[MbotController]\tNORMAL DATA SEND: ");
 
@@ -159,7 +153,7 @@ public class MbotController {
             for(InetAddress s : BroadcastServer.getMbotSockets()){
                 list.add(new ClientDTO(0f, new ArrayList<Integer>(Arrays.asList(0,0,0,0,0,0,0)), 0,
                         new ArrayList<Integer>(Arrays.asList(0,0,0,0,0))
-                        , 0, 0, s.toString()));
+                        , 0, 0, ConnectionType.MBOT_TEST_DATA, s.toString()));
             }
         }
 
