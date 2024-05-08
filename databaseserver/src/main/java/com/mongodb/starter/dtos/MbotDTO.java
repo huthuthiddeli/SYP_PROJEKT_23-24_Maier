@@ -9,7 +9,7 @@ public record MbotDTO(float ultrasonic, ArrayList<Integer> angles, int sound, Ar
                       int shake, int light, ConnectionType type, String IP) {
 
     public MbotDTO(MbotEntity c) {
-        this(c.getUltrasonic(), c.getAngles(), c.getSound(), c.getFront_light_sensors(), c.getShake(), c.getLight(), c.getIP());
+        this(c.getUltrasonic(), c.getAngles(), c.getSound(), c.getFront_light_sensors(), c.getShake(), c.getLight(), c.getType(), c.getIP());
     }
 
     public MbotEntity toMbotEntity() {
@@ -26,6 +26,7 @@ public record MbotDTO(float ultrasonic, ArrayList<Integer> angles, int sound, Ar
                 ", front_light_sensors=" + front_light_sensors +
                 ", shake=" + shake +
                 ", light=" + light +
+                ", type=" + type +
                 ", IP='" + IP + '\'' +
                 '}';
     }
