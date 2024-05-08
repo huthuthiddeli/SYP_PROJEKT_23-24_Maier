@@ -46,6 +46,11 @@ internal partial class MBotDetailView : UserControl
 
     }
 
+    public IBrush LightColorAtIndex(int i)
+    {
+        return (this.DataContext as MBotDetailViewModel).Bot.LightColors[i];
+    }
+
     public void sendCommand(object sender, KeyEventArgs e)
     {
         var context = this.DataContext as MBotDetailViewModel;

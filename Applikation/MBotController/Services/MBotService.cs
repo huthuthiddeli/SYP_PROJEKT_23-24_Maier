@@ -35,15 +35,19 @@ namespace MBotController.Services
         }
         private void SetItems()
         {
-            /*this.MBots = new List<MBot>()
+            this.MBots = new List<MBot>()
             {
-                new MBot("192.168.0.1", 20, 2.99, new List<int>(){1,2,3,4 }, 20, new List<int>(){4,3,2,1 }, 55, 22),
-                new MBot("192.168.0.2", 10, 3.99, new List<int>(){1,2,3,4 }, 21, new List<int>(){4,3,2,1 }, 56, 23),
-                new MBot("192.168.0.3", 30, 5.99, new List<int>(){1,2,3,4 }, 22, new List<int>(){4,3,2,1 }, 57, 24)
-            };*/
+                new MBot("192.168.0.1", 20, 2.99, new List<int>(){100,75,50,25 }, 20, [100,75,50,25], 55, 22, ConnectionType.MBOT_TEST_DATA),
+                new MBot("192.168.0.2", 10, 3.99, new List<int>(){100,75,50,25 }, 21, [100,75,50,25], 56, 23, ConnectionType.MBOT_TEST_DATA),
+                new MBot("192.168.0.3", 30, 5.99, new List<int>(){100,75,50,25 }, 22, [100,75,50,25], 57, 24, ConnectionType.MBOT_TEST_DATA)
+            };
 
+<<<<<<< Updated upstream
             //var serverEP = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 5595);
             IPAddress ip = GetLocalIP();
+=======
+            /*IPAddress ip = GetLocalIP();
+>>>>>>> Stashed changes
             var serverEP = new IPEndPoint(ip, 5595);
             UdpClient udpClient = new UdpClient(serverEP);
             udpClient.EnableBroadcast = true;
@@ -89,7 +93,12 @@ namespace MBotController.Services
 
             HttpClient client = new HttpClient();
             string json = client.GetStringAsync($"http://{IP}:8080/api/mbots").Result;
+<<<<<<< Updated upstream
             var res = client.GetFromJsonAsync<List<MBot>>($"http://{IP}:8080/api/mbots");
+=======
+
+            var res = client.GetFromJsonAsync<List<MBot>>($"http://{IP}:8080/api/mbots", options);
+>>>>>>> Stashed changes
             var list = res.Result;
             MBots.AddRange(list);
 
@@ -98,8 +107,13 @@ namespace MBotController.Services
             TcpClient = new TcpClient();
             TcpClient.Connect(IPAddress.Parse(IP), 5000);
 
+<<<<<<< Updated upstream
             new Thread(ReceiveData).Start();
             //ReceiveData();
+=======
+            this.Thread = new Thread(ReceiveData);
+            this.Thread.Start();*/
+>>>>>>> Stashed changes
         }
 
         public static IPAddress? GetLocalIP()
