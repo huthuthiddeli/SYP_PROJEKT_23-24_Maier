@@ -244,6 +244,7 @@ def move(left, right):
     
 def check_suicide():
     if SensorData.read_sensor_data().ultrasonic < 15:
+        cpi.audio.play("meow")
         stop_motors()
     
 
