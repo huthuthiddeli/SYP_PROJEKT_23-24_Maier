@@ -13,14 +13,12 @@ namespace MBotController.Models
     {
         [JsonIgnore]
         public static int Count { get; set; } = 0;
+        [JsonIgnore]
         public int? ID { get; set; }
-<<<<<<< Updated upstream
         public string IP {  get; set; }
         [JsonIgnore]
         public string Name { get; set; }
-=======
-        public string IP { get; set; }
->>>>>>> Stashed changes
+        [JsonIgnore]
         public int Velocity { get; set; } = 0;
         public double Ultrasonic { get; set; } = 0;
         public List<int> Angles { get; set; } = new List<int>();
@@ -33,6 +31,7 @@ namespace MBotController.Models
         public int Light { get; set; } = 0;
         [JsonIgnore]
         public IBrush BackgroundColor { get; private set; }
+        public ConnectionType Type { get; set; }
 
         public MBot()
         {
@@ -41,6 +40,7 @@ namespace MBotController.Models
             Count++;
 
             this.RandomColor();
+            this.CalcLightColors();
         }
 
         public MBot(string IP, int velocity) : this()
@@ -63,6 +63,8 @@ namespace MBotController.Models
             LightSensors = lightSensors;
             Shake = shake;
             Light = light;
+
+            this.CalcLightColors();
         }
 
         public MBot(string ip, int velocity, double ultrasonic, List<int> angles, int sound, int[] lightSensors, int shake, int light, ConnectionType type) : this()
@@ -77,7 +79,7 @@ namespace MBotController.Models
             this.Light = light;
             this.Type = type;
 
-            this.CalcLightColors();
+            this.CalcLightColors().Wait();
         }
 
         public void RandomColor()
@@ -97,13 +99,14 @@ namespace MBotController.Models
             }
         }
 
-        private void CalcLightColors()
+        private async Task CalcLightColors()
         {
             for (int i = 0; i < LightSensors.Length; i++)
             {
                 int sensor = LightSensors[i];
                 byte val = Convert.ToByte(sensor * 2.55);
-                IBrush color = new SolidColorBrush(Color.FromRgb(val, val, val));
+                IBrush? color = null;
+                    color = new SolidColorBrush(Color.FromRgb(val, val, val));
 
                 LightColors[i] = color;
             }

@@ -11,6 +11,6 @@ internal class MainViewModel : ViewModelBase
 
     public MainViewModel() 
     {
-        MBots = new MBotLandingViewModel(MBotService.MBots);
+        MBots = new MBotLandingViewModel(MBotService.Instance.MBots);
     }
 }

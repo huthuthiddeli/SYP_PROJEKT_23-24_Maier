@@ -76,7 +76,7 @@ internal partial class MBotDetailView : UserControl
             return;
         }
 
-        MBotService.Command = cmd;
+        MBotService.Instance.Command = cmd;
     }
 
     private void Canvas_PointerPressed(object sender, PointerPressedEventArgs e)
@@ -114,7 +114,7 @@ internal partial class MBotDetailView : UserControl
             normalizedY = Math.Round(normalizedY, 2);
 
             var context = this.DataContext as MBotDetailViewModel;
-            MBotService.Command = new Command($"{(-normalizedY).ToString(CultureInfo.InvariantCulture)};{(normalizedX).ToString(CultureInfo.InvariantCulture)}", context.Bot.IP);
+            MBotService.Instance.Command = new Command($"{(-normalizedY).ToString(CultureInfo.InvariantCulture)};{(normalizedX).ToString(CultureInfo.InvariantCulture)}", context.Bot.IP);
             Console.WriteLine();
         }
     }
@@ -125,6 +125,6 @@ internal partial class MBotDetailView : UserControl
         Handle.RenderTransform = new TranslateTransform(0, 0);
 
         var context = this.DataContext as MBotDetailViewModel;
-        MBotService.Command = new Command("0;0", context.Bot.IP);
+        MBotService.Instance.Command = new Command("0;0", context.Bot.IP);
     }
 }
