@@ -1,13 +1,8 @@
 package com.mongodb.starter.Networking;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.starter.dtos.MbotDTO;
 import com.mongodb.starter.models.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.xml.crypto.Data;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;

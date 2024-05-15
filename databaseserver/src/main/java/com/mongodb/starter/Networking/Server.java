@@ -1,9 +1,7 @@
 package com.mongodb.starter.Networking;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.starter.ConnectionType;
-import com.mongodb.starter.dtos.ClientDTO;
 import com.mongodb.starter.dtos.MbotDTO;
 import com.mongodb.starter.models.Command;
 import com.mongodb.starter.models.MbotEntity;
@@ -13,7 +11,6 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -47,6 +44,7 @@ public class Server {
 
                 //check if ip address is already registered
                 if(IsRegisteredSocket(clientSocket)){
+                    LOGGER.info("[SERVER]\t\t\tSocket: " + clientSocket.getInetAddress().toString() + " is already registered!");
                     continue;
                 }
                 
@@ -99,7 +97,12 @@ public class Server {
     }
 
     public boolean SendSensorDataToClient(MbotEntity m){
-        String clientSocketString = BroadcastServer.getClientSocket().split(":")[0];
+        String clientSocketString = "";
+        if(BroadcastServer.getClientSocket() != null && !BroadcastServer.getClientSocket().isEmpty()){
+            clientSocketString = BroadcastServer.getClientSocket().split(":")[0];
+        }else{
+            return false;
+        }
 
         Socket s = new Socket();
 
@@ -119,14 +122,29 @@ public class Server {
             }
 
 
-            if(!s.isConnected()){
+
+            try{
+                s.getOutputStream().write(1);
+                s.getOutputStream().flush();
+            }catch (IOException ex){
                 BroadcastServer.ResetClient();
+                System.out.println("Client is not alive: " + ex.getMessage());
                 return false;
             }
 
+
+
             stream = s.getOutputStream();
             
-            m = new MbotDTO(m.getUltrasonic(), m.getAngles(), m.getSound(), m.getFront_light_sensors(), m.getShake(), m.getLight(), ConnectionType.CONNECTION_ALIVE, m.getIP()).toMbotEntity();
+            m = new MbotDTO(m.getUltrasonic(),
+                    m.getAngles(),
+                    m.getSound(),
+                    m.getFront_light_sensors(),
+                    m.getShake(),
+                    m.getLight(),
+                    ConnectionType.CONNECTION_ALIVE,
+                    m.getIP())
+                    .toMbotEntity();
 
             stream.write(mapper.writeValueAsBytes(m));
             stream.flush();
@@ -147,8 +165,18 @@ public class Server {
 
     private void IsStillConnected() throws IOException {
         for(Socket s : connectedSockets){
-            if(!s.isConnected()){
-                s.close();
+            try {
+                s.getOutputStream().write(1);
+                s.getOutputStream().flush();
+            } catch (IOException e) {
+                System.out.println("Socket is not alive: " + e.getMessage());
+                connectedSockets.remove(s);
+                for(InetAddress broadcastSocket : BroadcastServer.getMbotSockets()){
+                    if(Objects.equals(broadcastSocket.toString(), s.getInetAddress().toString())){
+                        LOGGER.info("[SERVER]\t\tSocket has been disconnected: " + broadcastSocket.toString());
+                        BroadcastServer.getMbotSockets().remove(broadcastSocket);
+                    }
+                }
             }
         }
     }

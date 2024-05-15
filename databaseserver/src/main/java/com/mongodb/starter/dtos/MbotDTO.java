@@ -6,15 +6,14 @@ import com.mongodb.starter.models.MbotEntity;
 import java.util.ArrayList;
 
 public record MbotDTO(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> front_light_sensors,
-                      int shake, int light, ConnectionType type, String IP) {
+                      int shake, int light, ConnectionType type, String ip) {
 
     public MbotDTO(MbotEntity c) {
         this(c.getUltrasonic(), c.getAngles(), c.getSound(), c.getFront_light_sensors(), c.getShake(), c.getLight(), c.getType(), c.getIP());
     }
 
     public MbotEntity toMbotEntity() {
-        //ObjectId _id = objectID == null ? new ObjectId() : new ObjectId(objectID);
-        return new MbotEntity(ultrasonic, angles, sound, front_light_sensors, shake, light, type, IP);
+        return new MbotEntity(ultrasonic, angles, sound, front_light_sensors, shake, light, type);
     }
 
     @Override
@@ -27,7 +26,6 @@ public record MbotDTO(float ultrasonic, ArrayList<Integer> angles, int sound, Ar
                 ", shake=" + shake +
                 ", light=" + light +
                 ", type=" + type +
-                ", IP='" + IP + '\'' +
                 '}';
     }
 }

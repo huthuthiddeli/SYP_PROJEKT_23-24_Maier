@@ -2,11 +2,18 @@ package com.mongodb.starter.models;
 
 import com.mongodb.starter.ConnectionType;
 import org.bson.types.ObjectId;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.*;
 
+
+
+
+@Document(collation = "mbots")
 public class MbotEntity {
-    private ObjectId id;
+    @Id
+    private String id;
     private float ultrasonic;
     private ArrayList<Integer> angles;
     private int sound;
@@ -19,7 +26,7 @@ public class MbotEntity {
     public MbotEntity(){}
 
     public MbotEntity(float ultrasonic, ArrayList<Integer> angle, int sound, ArrayList<Integer> front_light_sensors, int shake,
-                      int light, String IP, ConnectionType type , ObjectId id){
+                      int light, String IP, ConnectionType type , String id){
         this.ultrasonic = ultrasonic;
         this.angles = angle;
         this.sound = sound;
@@ -30,14 +37,13 @@ public class MbotEntity {
         this.id = id;
     }
 
-    public MbotEntity(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> frontLightSensors, int shake, int light, ConnectionType type, String ip) {
+    public MbotEntity(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> frontLightSensors, int shake, int light, ConnectionType type) {
         this.ultrasonic = ultrasonic;
         this.angles = angles;
         this.sound = sound;
         this.front_light_sensors = frontLightSensors;
         this.shake = shake;
         this.light = light;
-        this.IP = ip;
     }
 
     public float getUltrasonic() {
@@ -112,12 +118,12 @@ public class MbotEntity {
         return this;
     }
 
-    public MbotEntity setId(ObjectId id){
+    public MbotEntity setId(String id){
         this.id = id;
         return this;
     }
 
-    public ObjectId getId(){
+    public String getId(){
         return this.id;
     }
 

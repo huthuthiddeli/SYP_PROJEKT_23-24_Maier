@@ -15,8 +15,7 @@ public record ClientDTO(float ultrasonic, ArrayList<Integer> angles, int sound, 
     }
 
     public MbotEntity toMbotEntity() {
-        ObjectId _id = new ObjectId();
-        return new MbotEntity(ultrasonic, angles, sound, front_light_sensors, shake, light, IP, type, _id);
+        return new MbotEntity(ultrasonic, angles, sound, front_light_sensors, shake, light, IP, type, "");
     }
 
 }

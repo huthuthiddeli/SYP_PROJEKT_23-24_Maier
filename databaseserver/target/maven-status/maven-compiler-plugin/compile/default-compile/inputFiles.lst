@@ -1,0 +1,12 @@
+C:\Users\Jonas\Documents\Programming\ChatRoom\SYP_PROJEKT_23-24_Maier\databaseserver\src\main\java\com\mongodb\starter\ApplicationStarter.java
+C:\Users\Jonas\Documents\Programming\ChatRoom\SYP_PROJEKT_23-24_Maier\databaseserver\src\main\java\com\mongodb\starter\ConnectionType.java
+C:\Users\Jonas\Documents\Programming\ChatRoom\SYP_PROJEKT_23-24_Maier\databaseserver\src\main\java\com\mongodb\starter\models\MbotEntity.java
+C:\Users\Jonas\Documents\Programming\ChatRoom\SYP_PROJEKT_23-24_Maier\databaseserver\src\main\java\com\mongodb\starter\Networking\UDP_Server.java
+C:\Users\Jonas\Documents\Programming\ChatRoom\SYP_PROJEKT_23-24_Maier\databaseserver\src\main\java\com\mongodb\starter\Networking\Server.java
+C:\Users\Jonas\Documents\Programming\ChatRoom\SYP_PROJEKT_23-24_Maier\databaseserver\src\main\java\com\mongodb\starter\dtos\ClientDTO.java
+C:\Users\Jonas\Documents\Programming\ChatRoom\SYP_PROJEKT_23-24_Maier\databaseserver\src\main\java\com\mongodb\starter\Networking\BroadcastServer.java
+C:\Users\Jonas\Documents\Programming\ChatRoom\SYP_PROJEKT_23-24_Maier\databaseserver\src\main\java\com\mongodb\starter\dtos\MbotDTO.java
+C:\Users\Jonas\Documents\Programming\ChatRoom\SYP_PROJEKT_23-24_Maier\databaseserver\src\main\java\com\mongodb\starter\controllers\MbotController.java
+C:\Users\Jonas\Documents\Programming\ChatRoom\SYP_PROJEKT_23-24_Maier\databaseserver\src\main\java\com\mongodb\starter\models\Command.java
+C:\Users\Jonas\Documents\Programming\ChatRoom\SYP_PROJEKT_23-24_Maier\databaseserver\src\main\java\com\mongodb\starter\repositories\ActualMbotRepository.java
+C:\Users\Jonas\Documents\Programming\ChatRoom\SYP_PROJEKT_23-24_Maier\databaseserver\src\main\java\com\mongodb\starter\services\ActualMbotService.java
