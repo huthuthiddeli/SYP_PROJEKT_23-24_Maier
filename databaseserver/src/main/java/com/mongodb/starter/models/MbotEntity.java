@@ -1,8 +1,8 @@
 package com.mongodb.starter.models;
 
+import com.mongodb.starter.ConnectionType;
 import org.bson.types.ObjectId;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
 public class MbotEntity {
@@ -14,11 +14,12 @@ public class MbotEntity {
     private int shake;
     private int light;
     private String IP;
+    private ConnectionType type;
 
     public MbotEntity(){}
 
     public MbotEntity(float ultrasonic, ArrayList<Integer> angle, int sound, ArrayList<Integer> front_light_sensors, int shake,
-                      int light, String IP, ObjectId id){
+                      int light, String IP, ConnectionType type , ObjectId id){
         this.ultrasonic = ultrasonic;
         this.angles = angle;
         this.sound = sound;
@@ -29,7 +30,7 @@ public class MbotEntity {
         this.id = id;
     }
 
-    public MbotEntity(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> frontLightSensors, int shake, int light, String ip) {
+    public MbotEntity(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> frontLightSensors, int shake, int light, ConnectionType type, String ip) {
         this.ultrasonic = ultrasonic;
         this.angles = angles;
         this.sound = sound;
@@ -99,6 +100,15 @@ public class MbotEntity {
 
     public MbotEntity setLight(int light) {
         this.light = light;
+        return this;
+    }
+
+    public ConnectionType getType(){
+        return this.type;
+    }
+
+    public MbotEntity setType(ConnectionType newType){
+        this.type = newType;
         return this;
     }
 
