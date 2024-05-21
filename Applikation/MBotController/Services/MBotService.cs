@@ -34,19 +34,19 @@ namespace MBotController.Services
 
             this.SetItems();
 
-            SendCommand();
+            //SendCommand();
         }
         private void SetItems()
         {
-            /*
+            
             MBots = new List<MBot>()
             {
                 new MBot("192.168.0.1", 20, 2.99, new List<int>(){100,75,50,25 }, 20, [100,75,50,25], 55, 22, ConnectionType.MBOT_TEST_DATA),
                 new MBot("192.168.0.2", 10, 3.99, new List<int>(){100,75,50,25 }, 21, [100,75,50,25], 56, 23, ConnectionType.MBOT_TEST_DATA),
                 new MBot("192.168.0.3", 30, 5.99, new List<int>(){100,75,50,25 }, 22, [100,75,50,25], 57, 24, ConnectionType.MBOT_TEST_DATA)
             };
-            */
-
+            
+            /*
             IPAddress ip = GetLocalIP();
             var serverEP = new IPEndPoint(ip, 5595);
             UdpClient udpClient = new UdpClient();
@@ -107,7 +107,7 @@ namespace MBotController.Services
             TcpClient.Connect(IPAddress.Parse(IP), 5000);
 
             //this.Thread = new Thread(ReceiveData);
-            //this.Thread.Start();
+            //this.Thread.Start();*/
         }
 
         public static IPAddress? GetLocalIP()
@@ -158,7 +158,7 @@ namespace MBotController.Services
             }
         }
 
-        public async void SendCommand()
+        /*public async void SendCommand()
         {
             HttpClient client = new HttpClient();
             if (CurrentBot is null)
@@ -191,6 +191,6 @@ namespace MBotController.Services
 
                 await Task.Delay(333);
             }
-        }
+        }*/
     }
 }

@@ -9,6 +9,7 @@ using MBotController.Models;
 using MBotController.Services;
 using MBotController.ViewModels;
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Net.Cache;
 using System.Net.Http;
@@ -77,6 +78,12 @@ internal partial class MBotDetailView : UserControl
         }
 
         MBotService.Instance.Command = cmd;
+        Debug.WriteLine(MBotService.Instance.Command);
+    }
+
+    private void HomeBtnClick(object sender, RoutedEventArgs e)
+    {
+        this.Content = new MBotLandingView();
     }
 
     private void Canvas_PointerPressed(object sender, PointerPressedEventArgs e)
@@ -115,7 +122,8 @@ internal partial class MBotDetailView : UserControl
 
             var context = this.DataContext as MBotDetailViewModel;
             MBotService.Instance.Command = new Command($"{(-normalizedY).ToString(CultureInfo.InvariantCulture)};{(normalizedX).ToString(CultureInfo.InvariantCulture)}", context.Bot.IP);
-            Console.WriteLine();
+
+            Debug.WriteLine(MBotService.Instance.Command);
         }
     }
 
@@ -126,5 +134,7 @@ internal partial class MBotDetailView : UserControl
 
         var context = this.DataContext as MBotDetailViewModel;
         MBotService.Instance.Command = new Command("0;0", context.Bot.IP);
+
+        Debug.WriteLine(MBotService.Instance.Command);
     }
 }

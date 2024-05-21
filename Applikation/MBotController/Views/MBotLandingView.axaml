@@ -5,7 +5,8 @@
              xmlns:vm="clr-namespace:MBotController.ViewModels"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="MBotController.Views.MBotLandingView"
-             x:DataType="vm:MBotLandingViewModel">
+             x:DataType="vm:MBotLandingViewModel"
+			 Background="White">
 	<UserControl.Styles>
 		<Style Selector="Label">
 			<Setter Property="FontWeight" Value="Bold"/>

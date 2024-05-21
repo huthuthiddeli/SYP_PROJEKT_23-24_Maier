@@ -86,12 +86,10 @@ namespace MBotController.Models
         {
             if (Dispatcher.UIThread.CheckAccess())
             {
-                // Wenn ja, direkt das SolidColorBrush-Objekt erstellen
                 this.BackgroundColor = new SolidColorBrush(Color.FromRgb((byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256)));
             }
             else
             {
-                // Andernfalls den Dispatcher verwenden, um den Code auf dem UI-Thread auszuführen
                 Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     this.BackgroundColor = new SolidColorBrush(Color.FromRgb((byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256)));

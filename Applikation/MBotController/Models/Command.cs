@@ -20,5 +20,10 @@ namespace MBotController.Models
             this.Name = name;
             this.Socket = socket;
         }
+
+        public override string? ToString()
+        {
+            return Name + ":" + Socket;
+        }
     }
 }
