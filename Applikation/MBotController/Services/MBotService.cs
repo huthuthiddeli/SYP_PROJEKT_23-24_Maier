@@ -10,19 +10,22 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Net.Http.Json;
 using System.IO;
+using System.ComponentModel;
+using System.Text.Json.Serialization;
 
 namespace MBotController.Services
 {
     internal class MBotService
     {
         public static MBotService Instance { get; } = new MBotService();
-        private static string IP { get; set; }
-        private static int Port { get; set; }
-        public static Command? Command { get; set; }
-        public static MBot? CurrentBot { get; set; }
+        private string IP { get; set; }
+        private int Port { get; set; }
+        public Command? Command { get; set; }
+        public MBot? CurrentBot { get; set; }
         private object _lock = new object();
-        public static List<MBot> MBots { get; set; }
-        public static TcpClient TcpClient { get; set; }
+        public List<MBot> MBots { get; set; }
+        public TcpClient TcpClient { get; set; }
+        public Thread Thread { get; set; }
         //TODO: Get MBots from server, otherwise use test data for debug purposes
 
         private MBotService()
@@ -31,21 +34,22 @@ namespace MBotController.Services
 
             this.SetItems();
 
-            SendCommand();
+            //SendCommand();
         }
         private void SetItems()
         {
-            /*this.MBots = new List<MBot>()
+            
+            MBots = new List<MBot>()
             {
-                new MBot("192.168.0.1", 20, 2.99, new List<int>(){1,2,3,4 }, 20, new List<int>(){4,3,2,1 }, 55, 22),
-                new MBot("192.168.0.2", 10, 3.99, new List<int>(){1,2,3,4 }, 21, new List<int>(){4,3,2,1 }, 56, 23),
-                new MBot("192.168.0.3", 30, 5.99, new List<int>(){1,2,3,4 }, 22, new List<int>(){4,3,2,1 }, 57, 24)
-            };*/
-
-            //var serverEP = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 5595);
+                new MBot("192.168.0.1", 20, 2.99, new List<int>(){100,75,50,25 }, 20, [100,75,50,25], 55, 22, ConnectionType.MBOT_TEST_DATA),
+                new MBot("192.168.0.2", 10, 3.99, new List<int>(){100,75,50,25 }, 21, [100,75,50,25], 56, 23, ConnectionType.MBOT_TEST_DATA),
+                new MBot("192.168.0.3", 30, 5.99, new List<int>(){100,75,50,25 }, 22, [100,75,50,25], 57, 24, ConnectionType.MBOT_TEST_DATA)
+            };
+            
+            /*
             IPAddress ip = GetLocalIP();
             var serverEP = new IPEndPoint(ip, 5595);
-            UdpClient udpClient = new UdpClient(serverEP);
+            UdpClient udpClient = new UdpClient();
             udpClient.EnableBroadcast = true;
             try
             {
@@ -89,7 +93,11 @@ namespace MBotController.Services
 
             HttpClient client = new HttpClient();
             string json = client.GetStringAsync($"http://{IP}:8080/api/mbots").Result;
-            var res = client.GetFromJsonAsync<List<MBot>>($"http://{IP}:8080/api/mbots");
+            JsonSerializerOptions options = new JsonSerializerOptions();
+            options.PropertyNameCaseInsensitive = true;
+            options.Converters.Add(new JsonStringEnumConverter());
+
+            var res = client.GetFromJsonAsync<List<MBot>>($"http://{IP}:8080/api/mbots", options);
             var list = res.Result;
             MBots.AddRange(list);
 
@@ -98,8 +106,8 @@ namespace MBotController.Services
             TcpClient = new TcpClient();
             TcpClient.Connect(IPAddress.Parse(IP), 5000);
 
-            new Thread(ReceiveData).Start();
-            //ReceiveData();
+            //this.Thread = new Thread(ReceiveData);
+            //this.Thread.Start();*/
         }
 
         public static IPAddress? GetLocalIP()
@@ -116,7 +124,7 @@ namespace MBotController.Services
             return null;
         }
 
-        public static async void ReceiveData()
+        public async void ReceiveData()
         {
             while (true)
             {
@@ -133,34 +141,16 @@ namespace MBotController.Services
 
                 JsonSerializerOptions options = new JsonSerializerOptions();
                 options.PropertyNameCaseInsensitive = true;
-                List<MBot>? list = JsonSerializer.Deserialize<List<MBot>>(json, options);
+                options.Converters.Add(new JsonStringEnumConverter());
+                MBot? bot = JsonSerializer.Deserialize<MBot>(json, options);
 
-                if (list is not null)
+                if (bot is not null)
                 {
-                    //Update and Add MBots
-                    foreach (MBot mbot in list)
+                    MBot curr = MBots.Find(m => m.ID == bot.ID);
+
+                    if (curr is not null)
                     {
-                        MBot? clone = MBots.Find(m => m.IP == mbot.IP);
-
-                        if (clone is not null)
-                        {
-                            clone.Copy(mbot);
-                        }
-                        else
-                        {
-                            MBots.Add(mbot);
-                        }
-                    }
-
-                    //Remove MBots
-                    foreach (MBot mbot in MBots)
-                    {
-                        MBot? clone = list.Find(m => m.IP == mbot.IP);
-
-                        if (clone is null)
-                        {
-                            MBots.Remove(mbot);
-                        }
+                        curr.Copy(bot);
                     }
                 }
 
@@ -168,7 +158,7 @@ namespace MBotController.Services
             }
         }
 
-        public static async void SendCommand()
+        /*public async void SendCommand()
         {
             HttpClient client = new HttpClient();
             if (CurrentBot is null)
@@ -201,6 +191,6 @@ namespace MBotController.Services
 
                 await Task.Delay(333);
             }
-        }
+        }*/
     }
 }

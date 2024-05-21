@@ -15,7 +15,7 @@ namespace MBotController.ViewModels
         public MBotDetailViewModel(MBot bot)
         {
             this.Bot = bot;
-            MBotService.CurrentBot = bot;
+            MBotService.Instance.CurrentBot = bot;
         }
     }
 }
