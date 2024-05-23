@@ -12,6 +12,8 @@ using System.Net.Http.Json;
 using System.IO;
 using System.ComponentModel;
 using System.Text.Json.Serialization;
+using System.Diagnostics;
+using Avalonia.Threading;
 
 namespace MBotController.Services
 {
@@ -38,15 +40,15 @@ namespace MBotController.Services
         }
         private void SetItems()
         {
-            
+
             /*MBots = new List<MBot>()
             {
                 new MBot("192.168.0.1", 20, 2.99, new List<int>(){100,75,50,25 }, 20, [100,75,50,25], 55, 22, ConnectionType.MBOT_TEST_DATA),
                 new MBot("192.168.0.2", 10, 3.99, new List<int>(){100,75,50,25 }, 21, [100,75,50,25], 56, 23, ConnectionType.MBOT_TEST_DATA),
                 new MBot("192.168.0.3", 30, 5.99, new List<int>(){100,75,50,25 }, 22, [100,75,50,25], 57, 24, ConnectionType.MBOT_TEST_DATA)
             };*/
-            
-            
+
+
             IPAddress ip = GetLocalIP();
             var serverEP = new IPEndPoint(ip, 5595);
             UdpClient udpClient = new UdpClient();
@@ -101,7 +103,11 @@ namespace MBotController.Services
             var list = res.Result;
             MBots.AddRange(list);
 
-            MBots.ForEach(mbot => mbot.RandomColor());
+            foreach(MBot mbot in list)
+            {
+                mbot.CalcLightColors().Wait();
+                mbot.RandomColor();
+            }
 
             TcpClient = new TcpClient();
             TcpClient.Connect(IPAddress.Parse(IP), 5000);
@@ -143,10 +149,11 @@ namespace MBotController.Services
                 options.PropertyNameCaseInsensitive = true;
                 options.Converters.Add(new JsonStringEnumConverter());
                 MBot? bot = JsonSerializer.Deserialize<MBot>(json, options);
+                Debug.WriteLine(bot.IP);
 
                 if (bot is not null)
                 {
-                    MBot curr = MBots.Find(m => m.ID == bot.ID);
+                    MBot? curr = MBots.Find(m => m.IP == "/" + bot.IP);
 
                     if (curr is not null)
                     {
