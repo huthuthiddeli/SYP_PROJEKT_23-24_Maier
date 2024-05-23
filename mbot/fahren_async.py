@@ -175,7 +175,8 @@ def receiving_coroutine(tcp_socket):
                     ANTI_SUICE_ON = False
                 elif data.split(":")[0] == "LED":
                     rgb_values = data.split(":")[1]
-                    set_leds(int(rgb_values.split(";")[0]), int(rgb_values.split(";")[0]), int(rgb_values.split(";")[0]))
+                    rgb_values = rgb_values.split(";")
+                    set_leds(int(rgb_values[0]), int(rgb_values[1]), int(rgb_values[2]))
                 else:
                     converted_values = joystick_to_motor_speed(float(data.split(';')[0]), float(data.split(';')[1]))
                     left = converted_values[0]
@@ -253,7 +254,7 @@ def stop_motors():
     
 
 def set_leds(r,g,b):
-    cpi.led.on(r,g,b)
+    cpi.led.on(int(r),int(g),int(b))
     
 
 def start_coroutines(tcp_socket, post_route, post_header):
