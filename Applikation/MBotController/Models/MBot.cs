@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
+using Avalonia.Controls;
 
 namespace MBotController.Models
 {
@@ -15,7 +17,7 @@ namespace MBotController.Models
         public static int Count { get; set; } = 0;
         [JsonIgnore]
         public int? ID { get; set; }
-        public string IP {  get; set; }
+        public string IP { get; set; }
         [JsonIgnore]
         public string Name { get; set; }
         [JsonIgnore]
@@ -39,8 +41,7 @@ namespace MBotController.Models
             this.ID = Count;
             Count++;
 
-            this.RandomColor();
-            this.CalcLightColors();
+            //this.CalcLightColors();
         }
 
         public MBot(string IP, int velocity) : this()
@@ -50,9 +51,6 @@ namespace MBotController.Models
             this.ID = Count;
             Count++;
             this.Velocity = velocity;
-
-            this.RandomColor();
-            //BackgroundColor = new SolidColorBrush(Color.FromRgb((byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256)));
         }
 
         public MBot(string ip, int velocity, double ultrasonic, List<int> angles, int sound, int[] lightSensors, int shake, int light) : this(ip, velocity)
@@ -63,8 +61,6 @@ namespace MBotController.Models
             LightSensors = lightSensors;
             Shake = shake;
             Light = light;
-
-            this.CalcLightColors();
         }
 
         public MBot(string ip, int velocity, double ultrasonic, List<int> angles, int sound, int[] lightSensors, int shake, int light, ConnectionType type) : this()
@@ -97,14 +93,14 @@ namespace MBotController.Models
             }
         }
 
-        private async Task CalcLightColors()
+        public async Task CalcLightColors()
         {
-            for (int i = 0; i < LightSensors.Length; i++)
+            for (int i = 0; i < 4; i++)
             {
                 int sensor = LightSensors[i];
                 byte val = Convert.ToByte(sensor * 2.55);
                 IBrush? color = null;
-                    color = new SolidColorBrush(Color.FromRgb(val, val, val));
+                color = new SolidColorBrush(Color.FromRgb(val, val, val));
 
                 LightColors[i] = color;
             }

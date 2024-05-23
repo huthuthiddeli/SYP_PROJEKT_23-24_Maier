@@ -44,7 +44,6 @@ internal partial class MBotDetailView : UserControl
         Handle.PointerPressed += Canvas_PointerPressed;
         Handle.PointerReleased += Canvas_PointerReleased;
         Handle.PointerMoved += Canvas_PointerMoved;
-
     }
 
     public IBrush LightColorAtIndex(int i)
@@ -58,19 +57,19 @@ internal partial class MBotDetailView : UserControl
         Command cmd;
         if (e.Key == Key.W)
         {
-            cmd = new("0;1", "/" + context.Bot.IP);
+            cmd = new("0;0.5", context.Bot.IP);
         }
         else if (e.Key == Key.A)
         {
-            cmd = new("-1;0", "/" + context.Bot.IP);
+            cmd = new("-0.5;0", context.Bot.IP);
         }
         else if (e.Key == Key.S)
         {
-            cmd = new("0;-1", "/" + context.Bot.IP);
+            cmd = new("0;-0.5", context.Bot.IP);
         }
         else if (e.Key == Key.D)
         {
-            cmd = new("1;0", "/" + context.Bot.IP);
+            cmd = new("0.5;0", context.Bot.IP);
         }
         else
         {

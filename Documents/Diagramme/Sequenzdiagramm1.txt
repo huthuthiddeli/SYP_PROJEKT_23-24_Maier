@@ -1,0 +1,41 @@
+title MBot Internet and Server Connection Sequence Diagram
+
+User->MBot: Power On
+alt Correct Configurations
+    User->MBot: Enter Configurations
+    MBot->Network: Pass config
+        Network->Network: Validate config
+    Network->MBot: Confirm connection 
+    MBot->Network: Broadcast for server
+        Network->Server: Search for server
+    alt Server Found
+        Server->Network: Response with address and port
+        Network->MBot: Server address and port
+    else Timeout
+        MBot->MBot: Retry Broadcast after 5s
+        loop Repeat
+            MBot->Network: Retry Broadcast
+        end
+        MBot->Network: Establish TCP connection
+        Network->Server: Establish TCP connection
+    alt Connection okay
+        Server->Network: Confirm connection
+        Network->MBot: Confirm connection
+    else Connection timeout
+        MBot->MBot: Retry connection after 5s
+        loop Repeat
+            MBot->Network: Retry connection
+        end
+     end
+end
+else Incorrect Configurations
+    User->MBot: Enter Incorrect Configurations
+    MBot->Network: Connect to specified Wifi
+    Network->Network: Validate config
+    Network->MBot: Connection Failed
+    MBot->MBot: Retry Connection after 5s
+    loop Repeat
+        MBot->Network: Retry Connection
+    end
+end
+
