@@ -51,7 +51,9 @@ public class BroadcastServer {
                     DatagramPacket responsePacket = new DatagramPacket(responseData, responseData.length, senderAddress, 6000);
                     socket.send(responsePacket);
                     LOGGER.info("[BROADCAST]\t\tResponse: " + senderAddress + ":" + senderPort + " - " + responseMessage);
-                    mbotSockets.add(senderAddress);
+                    if(!mbotSockets.contains(senderAddress)){
+                        mbotSockets.add(senderAddress);
+                    }
                 }
 
                 if(receivedMessage.trim().equals("ACC")){

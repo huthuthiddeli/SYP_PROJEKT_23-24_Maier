@@ -16,6 +16,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.logging.ConsoleHandler;
 
 public class Server {
 
@@ -71,7 +72,7 @@ public class Server {
         try {
             //INFO WHEN CONNECTED SOCKETS INCREASE
             if(prevSize == 0 || prevSize != connectedSockets.size()){
-                LOGGER.info("[SERVER]\t\t\t" + String.valueOf("Size of List: " + connectedSockets.size()));
+                LOGGER.info("[SERVER]\t\t\t" + String.valueOf("Connected Devices: " + connectedSockets.size()));
                 prevSize = connectedSockets.size();
             }
 
@@ -85,12 +86,20 @@ public class Server {
             stream.write(command.getName().getBytes(StandardCharsets.UTF_8));
             stream.flush();
 
-            LOGGER.info("[SERVER]\t\t\tCommand: " + command.toString() + " sent to: " + s.toString());
+            if(counter >= 25){
+                LOGGER.info("[SERVER]\t\t\tCommand: " + command.toString() + " sent to: " + s.toString());
+                counter = 0;
+            }else{
+                counter++;
+            }
 
 
         }catch (Exception ex){
             LOGGER.error("[SERVER]\t\t\tERROR:" + ex.getMessage());
             LOGGER.error("[SERVER]\t\t\tRestart Mbot with ip: " + command.getSocket());
+
+
+
 
             return false;
         }
@@ -98,7 +107,10 @@ public class Server {
         return true;
     }
 
-    public boolean SendSensorDataToClient(MbotEntity m){
+    public boolean SendSensorDataToClient(MbotEntity m) throws NullPointerException, InterruptedException, IOException {
+
+        Thread.sleep(1000);
+
         String clientSocketString = BroadcastServer.getClientSocket().split(":")[0];
 
         Socket s = new Socket();
@@ -111,6 +123,8 @@ public class Server {
                 if(counter > 25){
                     LOGGER.info("[SERVER]\t\t\tThere was no client registered!");
                     counter = 0;
+                }else if(counter > 12){
+                    LOGGER.info("[SERVER]\t\t\tData sent to: " + s.getInetAddress().toString());
                 }else{
                     counter++;
                 }
@@ -118,24 +132,26 @@ public class Server {
                 return false;
             }
 
-
-            if(!s.isConnected()){
-                BroadcastServer.ResetClient();
-                return false;
-            }
-
             stream = s.getOutputStream();
             
-            m = new MbotDTO(m.getUltrasonic(), m.getAngles(), m.getSound(), m.getFront_light_sensors(), m.getShake(), m.getLight(), ConnectionType.CONNECTION_ALIVE, m.getIP()).toMbotEntity();
+            ClientDTO cd = new ClientDTO(m.getUltrasonic(), m.getAngles(), m.getSound(), m.getFront_light_sensors(), m.getShake(), m.getLight(), ConnectionType.CONNECTION_ALIVE, m.getIP());
 
-            stream.write(mapper.writeValueAsBytes(m));
+            stream.write(mapper.writeValueAsBytes(cd));
             stream.flush();
 
-            LOGGER.info("[SERVER]\t\t\tData sent to: " + s.getInetAddress().toString());
         } catch (IOException e) {
+            stream = TetermineRightSocketClient(BroadcastServer.getClientSocket()).getOutputStream();
+
+            ClientDTO deadConnection = new ClientDTO(m.getUltrasonic(), m.getAngles(), m.getSound(), m.getFront_light_sensors(), m.getShake(), m.getLight(), ConnectionType.CONNECTION_CLOSED, m.getIP());
+
+            stream.write(mapper.writeValueAsBytes(deadConnection));
+            stream.flush();
+
+            BroadcastServer.ResetClient();
+            connectedSockets.remove(s);
+
             LOGGER.error("[SERVER]\t\t\t Error sending data to client (SensordatatTOClient): " + e.getMessage());
             LOGGER.error(e.toString());
-            connectedSockets.remove(s);
             return false;
         }
 
@@ -173,7 +189,6 @@ public class Server {
     private boolean IsRegisteredString(String socket){
         for(Socket s : connectedSockets) {
             if (Objects.equals(s.getInetAddress().toString(), socket)) {
-
                 if(!s.isConnected()){
                     connectedSockets.remove(s);
                     return false;
@@ -197,15 +212,18 @@ public class Server {
             }
         }
 
-        LOGGER.error("[SERVER]\t\t\tNo Mbot-Sockets matching!");
+        if(counter >= 25){
+            LOGGER.error("[SERVER]\t\t\tNo Mbot-Sockets matching!");
+            counter = 0;
+        }else{
+            counter++;
+        }
 
         return null;
     }
 
     private Socket TetermineRightSocketClient(String address){
         for(Socket s : connectedSockets){
-            LOGGER.info(s.getInetAddress().toString() +"  " + address.toString());
-            LOGGER.info(String.valueOf(s.getInetAddress().toString().equals(address)));
             if(Objects.equals(s.getInetAddress().toString(), address)){
                 return s;
             }

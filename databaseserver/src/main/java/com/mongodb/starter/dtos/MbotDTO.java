@@ -12,6 +12,10 @@ public record MbotDTO(float ultrasonic, ArrayList<Integer> angles, int sound, Ar
         this(c.getUltrasonic(), c.getAngles(), c.getSound(), c.getFront_light_sensors(), c.getShake(), c.getLight(), c.getType(), c.getIP());
     }
 
+    public ClientDTO toClientDTO(){
+        return new ClientDTO(ultrasonic(), angles(), sound(), front_light_sensors(), shake(), light(), type(), IP());
+    }
+
     public MbotEntity toMbotEntity() {
         //ObjectId _id = objectID == null ? new ObjectId() : new ObjectId(objectID);
         return new MbotEntity(ultrasonic, angles, sound, front_light_sensors, shake, light, type, IP);

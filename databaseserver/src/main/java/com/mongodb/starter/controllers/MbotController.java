@@ -31,10 +31,7 @@ public class MbotController {
     private final UDP_Server udp_server = UDP_Server.GetInstance();
 
 
-    private HashMap<String, MbotDTO> lastPackage = new HashMap<>();
     private int counter = 0;
-    private Command prevCommand;
-
 
     public MbotController(MbotService mbotService) {
 
@@ -51,17 +48,14 @@ public class MbotController {
     /**
      *  <h>Get Data from MBOT. Every 25th item will be saved in the database. All of these will be directed to the Client</h>
      * @param item Sensordata object from MBOT
-     * @throws JsonProcessingException
-     * @throws IOException
      */
     @PostMapping("/mbot/Data")
     @ResponseStatus(HttpStatus.OK)
-    public @ResponseBody MbotDTO postData(@RequestBody MbotDTO item) throws JsonProcessingException, IOException {
-        try{
-            lastPackage.put(item.toMbotEntity().getIP(), item);
+    public @ResponseBody MbotDTO postData(@RequestBody MbotDTO item) {
+        try {
             server.SendSensorDataToClient(item.toMbotEntity());
 
-            if(counter >= 25){
+            if (counter >= 25) {
                 item = new MbotDTO(item.ultrasonic(), item.angles(), item.sound(), item.front_light_sensors(), item.shake(), item.light(), ConnectionType.MBOT_DB_PACKAGE, item.IP());
                 //LOGGER.info("[MBOTController]\t:" + item.toString());
                 LOGGER.info("[MbotController]\tData receivied!");
@@ -69,8 +63,9 @@ public class MbotController {
                 counter = 0;
             }
 
-        }catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             LOGGER.error("error: " + e.getMessage());
+        } catch (Exception ex){
         }finally {
             counter++;
         }
@@ -80,11 +75,9 @@ public class MbotController {
 
     @PostMapping("/mbot/DataUDP")
     @ResponseStatus(HttpStatus.OK)
-    public @ResponseBody void postDataUDP(@RequestBody MbotDTO item) throws JsonProcessingException, IOException {
+    public @ResponseBody void postDataUDP(@RequestBody MbotDTO item) {
 
         try{
-            lastPackage.put(item.toMbotEntity().getIP(), item);
-
 
             if(counter >= 25){
                 LOGGER.info("[MBOTController]\t:" + item.toString());
@@ -96,7 +89,9 @@ public class MbotController {
 
         }catch (IllegalArgumentException e){
             LOGGER.error("Error UDP: " + e.getMessage());
-        }finally {
+        } catch (InterruptedException | IOException e) {
+            throw new RuntimeException(e);
+        } finally {
             counter++;
         }
     }
@@ -104,7 +99,7 @@ public class MbotController {
 
     @PostMapping("/mbot/commandQueue")
     @ResponseStatus(HttpStatus.OK)
-    public @ResponseBody boolean getCommandQueueUDP(@RequestBody Command command) throws IOException {
+    public @ResponseBody boolean getCommandQueueUDP(@RequestBody Command command) {
 
         if(command == null){
             return false;
@@ -120,18 +115,10 @@ public class MbotController {
                 return false;
             }
         }catch (Exception ex){
-            LOGGER.error("[MBOTCONTROLLER]\t Commandquqeue: " +ex.getMessage());
+            LOGGER.error("[MBOTCONTROLLER]\tCommandquqeue: " +ex.getMessage());
         }
 
         return true;
-    }
-
-    @GetMapping("/mbot/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public @ResponseBody MbotDTO getMbot(@PathVariable String id) {
-        MbotDTO CarDTO = mbotService.findOne(id);
-        if (CarDTO == null) return null;
-        return CarDTO;
     }
 
     @GetMapping("/mbots")
@@ -142,21 +129,18 @@ public class MbotController {
 
         if(BroadcastServer.getMbotSockets().isEmpty()){
             LOGGER.info("[MbotController]\tTEST DATA SENT!");
-            list.add(new ClientDTO(2.5f, new ArrayList<Integer>(Arrays.asList(1,2,3,6,8,9,99)), 3,
-                    new ArrayList<Integer>(Arrays.asList(1,2,3,4,6))
+            list.add(new ClientDTO(2.5f, new ArrayList<>(Arrays.asList(1,2,3)), 3,
+                    new ArrayList<>(Arrays.asList(1,2,3,4))
                     , 95, 22, ConnectionType.MBOT_TEST_DATA, "1.12.23.4"));
         }else{
-            LOGGER.info("[MbotController]\tNORMAL DATA SEND: ");
-
-            LOGGER.info(String.valueOf(BroadcastServer.getMbotSockets().size()));
+            LOGGER.info("[MbotController]\tConnected Mbots: " + BroadcastServer.getMbotSockets().size());
 
             for(InetAddress s : BroadcastServer.getMbotSockets()){
-                list.add(new ClientDTO(0f, new ArrayList<Integer>(Arrays.asList(0,0,0,0,0,0,0)), 0,
-                        new ArrayList<Integer>(Arrays.asList(0,0,0,0,0))
+                list.add(new ClientDTO(0f, new ArrayList<>(Arrays.asList(0,0,0)), 0,
+                        new ArrayList<>(Arrays.asList(0,0,0,0))
                         , 0, 0, ConnectionType.MBOT_TEST_DATA, s.toString()));
             }
         }
-
 
         return mapper.writeValueAsString(list);
     }
