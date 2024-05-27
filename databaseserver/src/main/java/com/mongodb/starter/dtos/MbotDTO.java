@@ -4,11 +4,13 @@ import com.mongodb.starter.ConnectionType;
 import com.mongodb.starter.models.MbotEntity;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 
 
 @Getter
+@Setter
 public class MbotDTO {
     private float ultrasonic;
     private ArrayList<Integer> angles;
@@ -18,6 +20,8 @@ public class MbotDTO {
     private int light;
     private ConnectionType type;
     private String ip;
+
+    public MbotDTO(){}
 
     // Constructor with parameters
     public MbotDTO(float ultrasonic, ArrayList<Integer> angles, int sound, 
@@ -32,7 +36,7 @@ public class MbotDTO {
         this.type = type;
         this.ip = ip;
     }
-    
+
     public MbotDTO(MbotEntity c) {
         this.ultrasonic = c.getUltrasonic();
         this.angles = c.getAngles();
@@ -45,7 +49,7 @@ public class MbotDTO {
     }
 
     public MbotEntity toMbotEntity() {
-        return new MbotEntity(ultrasonic, angles, sound, front_light_sensors, shake, light, type, IP);
+        return new MbotEntity(ultrasonic, angles, sound, front_light_sensors, shake, light, type, ip);
     }
 
     @Override

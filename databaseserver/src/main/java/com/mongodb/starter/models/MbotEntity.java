@@ -50,13 +50,14 @@ public class MbotEntity {
         this.id = id;
     }
 
-    public MbotEntity(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> frontLightSensors, int shake, int light, ConnectionType type) {
+    public MbotEntity(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> frontLightSensors, int shake, int light, ConnectionType type, String ip) {
         this.ultrasonic = ultrasonic;
         this.angles = angles;
         this.sound = sound;
         this.front_light_sensors = frontLightSensors;
         this.shake = shake;
         this.light = light;
+        this.IP = ip;
     }
 
     public float getUltrasonic() {
