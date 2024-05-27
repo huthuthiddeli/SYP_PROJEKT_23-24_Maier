@@ -1,26 +1,39 @@
 package com.mongodb.starter.models;
 
 import com.mongodb.starter.ConnectionType;
+import com.mongodb.starter.dtos.MbotDTO;
+import lombok.Getter;
+import lombok.Setter;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.*;
 
 
 
-
-@Document(collation = "mbots")
+@Document(collation = "/mbots")
+@Getter
+@Setter
 public class MbotEntity {
     @Id
     private String id;
+    @Field("ultrasonic")
     private float ultrasonic;
+    @Field("angles")
     private ArrayList<Integer> angles;
+    @Field("sound")
     private int sound;
+    @Field("font_light_sensors")
     private ArrayList<Integer> front_light_sensors;
+    @Field("shake")
     private int shake;
+    @Field("light")
     private int light;
+    @Field("IP")
     private String IP;
+    @Field("type")
     private ConnectionType type;
 
     public MbotEntity(){}

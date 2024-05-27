@@ -18,9 +18,6 @@ public class Server {
 
     private static Server INSTANCE;
     private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
-
-    private ArrayList<Command> commandList = new ArrayList<>();
-
     private ArrayList<Socket> connectedSockets = new ArrayList<>();
     private final ObjectMapper mapper = new ObjectMapper();
     private OutputStream stream;
@@ -136,15 +133,17 @@ public class Server {
 
             stream = s.getOutputStream();
             
-            m = new MbotDTO(m.getUltrasonic(),
+            m = new MbotDTO(
+                    m.getUltrasonic(),
                     m.getAngles(),
                     m.getSound(),
                     m.getFront_light_sensors(),
                     m.getShake(),
                     m.getLight(),
                     ConnectionType.CONNECTION_ALIVE,
-                    m.getIP())
-                    .toMbotEntity();
+                    m.getIP()
+                )   
+                .toMbotEntity();
 
             stream.write(mapper.writeValueAsBytes(m));
             stream.flush();
@@ -182,19 +181,20 @@ public class Server {
     }
 
     //IF IP IS ALREADY IN LIST SKIP ACTIONS
-    private boolean IsRegisteredSocket(Socket address){
+    private boolean IsRegisteredSocket(Socket address) throws IOException{
         if(address == null){
             return false;
         }
 
         for(Socket s : connectedSockets){
+            IsStillConnected();
+
             if(Objects.equals(s.getInetAddress(), address.getInetAddress())){
                 return true;
             }
         }
 
         connectedSockets.add(address);
-
         return false;
     }
 
@@ -255,9 +255,5 @@ public class Server {
         }
 
         return INSTANCE;
-    }
-
-    public void addToCommandList(Command m){
-        this.commandList.add(m);
     }
 }

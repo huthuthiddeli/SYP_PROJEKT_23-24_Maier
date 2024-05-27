@@ -6,10 +6,11 @@ import com.mongodb.starter.ConnectionType;
 import com.mongodb.starter.Networking.BroadcastServer;
 import com.mongodb.starter.Networking.Server;
 import com.mongodb.starter.Networking.UDP_Server;
-import com.mongodb.starter.dtos.ClientDTO;
 import com.mongodb.starter.dtos.MbotDTO;
 import com.mongodb.starter.models.Command;
 import com.mongodb.starter.services.ActualMbotService;
+import com.mongodb.starter.models.MbotEntity;
+import com.mongodb.starter.services.ActualService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,7 @@ public class MbotController {
     private final UDP_Server udp_server = UDP_Server.GetInstance();
 
 
+
     private HashMap<String, MbotDTO> lastPackage = new HashMap<>();
     private int counter = 0;
     private Command prevCommand;
@@ -41,12 +43,16 @@ public class MbotController {
         this.mbotService = mbotService;
     }
 
+
     @GetMapping("/savedMbots")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get all entrys saved inside of the MongoDB")
     public @ResponseBody List<MbotDTO> getAllDB() {
-        return mbotService.findAll();
+        List<MbotDTO> entities = this.mbotService.findAll();
+
+        return entities;
     }
+
 
     /**
      *  <h>Get Data from MBOT. Every 25th item will be saved in the database. All of these will be directed to the Client</h>
@@ -54,6 +60,8 @@ public class MbotController {
      * @throws JsonProcessingException Because of mapping?
      * @throws IOException Socketproblems
      */
+
+
     @PostMapping("/mbot/Data")
     @ResponseStatus(HttpStatus.OK)
     public @ResponseBody MbotDTO postData(@RequestBody MbotDTO item) throws IOException {
@@ -62,12 +70,31 @@ public class MbotController {
             server.SendSensorDataToClient(item.toMbotEntity());
             mbotService.save(item);
             if(counter >= 25){
-                item = new MbotDTO(item.ultrasonic(), item.angles(), item.sound(), item.front_light_sensors(), item.shake(), item.light(), ConnectionType.MBOT_DB_PACKAGE, item.ip());
                 //LOGGER.info("[MBOTController]\t:" + item.toString());
                 LOGGER.info("[MbotController]\tData receivied!");
-
+                mbotService.save(item);
                 counter = 0;
             }
+
+        } catch (IllegalArgumentException e) {
+            LOGGER.error("error: " + e.getMessage());
+        } catch (Exception ignored){
+        }finally {
+            counter++;
+        }
+        return null;
+    }
+
+    @PostMapping("/mbot/test")
+    @ResponseStatus(HttpStatus.OK)
+    public @ResponseBody MbotDTO test(@RequestBody MbotDTO item) {
+        try {
+
+            //LOGGER.info("[MBOTController]\t:" + item.toString());
+            LOGGER.info("[MbotController]\tData receivied!");
+            mbotService.save(item);
+            counter = 0;
+
 
         }catch (IllegalArgumentException e){
             LOGGER.error("error: " + e.getMessage());
@@ -76,6 +103,7 @@ public class MbotController {
         }
         return null;
     }
+
 
 
     @PostMapping("/mbot/DataUDP")
@@ -129,22 +157,34 @@ public class MbotController {
     @ResponseStatus(HttpStatus.OK)
     public @ResponseBody String getActiveMbots() throws JsonProcessingException {
 
-        ArrayList<ClientDTO> list = new ArrayList<>();
-        LOGGER.info("[MbotController]\tNo Mbots registered in broadcast!");
+        ArrayList<MbotDTO> list = new ArrayList<>();
+
         if(BroadcastServer.getMbotSockets().isEmpty()){
             LOGGER.info("[MbotController]\tTEST DATA SENT!");
-            list.add(new ClientDTO(2.5f, new ArrayList<>(Arrays.asList(1,2,3,6,8,9,99)), 3,
-                    new ArrayList<>(Arrays.asList(1,2,3,4,6))
-                    , 95, 22, ConnectionType.MBOT_TEST_DATA, "1.12.23.4"));
+            list.add(
+                new MbotDTO(2.5f,
+                    new ArrayList<>(Arrays.asList(1,2,3)),
+                    3,
+                    new ArrayList<>(Arrays.asList(1,2,3,4)),
+                    95, 
+                    22, 
+                    ConnectionType.MBOT_TEST_DATA, 
+                    "1.12.23.4")
+                    );
         }else{
 
             LOGGER.info("[MbotController]\tNORMAL DATA SEND: ");
             LOGGER.info(String.valueOf(BroadcastServer.getMbotSockets().size()));
 
             for(InetAddress s : BroadcastServer.getMbotSockets()){
-                list.add(new ClientDTO(0f, new ArrayList<>(Arrays.asList(0,0,0,0,0,0,0)), 0,
-                        new ArrayList<>(Arrays.asList(0,0,0,0,0))
-                        , 0, 0, ConnectionType.CONNECTION_ALIVE, s.toString()));
+                list.add(new MbotDTO(0f, 
+                new ArrayList<>(Arrays.asList(0,0,0)), 
+                0,
+                new ArrayList<>(Arrays.asList(0,0,0,0)),
+                0, 
+                0, 
+                ConnectionType.MBOT_TEST_DATA, 
+                s.toString()));
             }
         }
 
@@ -152,7 +192,6 @@ public class MbotController {
         return mapper.writeValueAsString(list);
     }
 
-    //TODO: MAKE IT WORK {TRANSACTIONS ARE NOT WORKING WITH MONGODB WITHOUT SETTINGS}
     @DeleteMapping("/mbots/sure")
     public void deleteCars() {
         mbotService.deleteAll();
@@ -164,4 +203,5 @@ public class MbotController {
         LOGGER.error("Internal server error.", e);
         return e;
     }
+
 }
