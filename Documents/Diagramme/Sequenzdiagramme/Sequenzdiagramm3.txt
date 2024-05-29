@@ -1,0 +1,15 @@
+title Display Sensor Data Sequence Diagram
+
+User->Control Software: Start
+alt Connection established
+    loop Every 5 seconds
+        MBot->Sensors: Collect sensor data
+        MBot->Server: Send sensor data
+        Server->MongoDB: Save sensor data
+        Server->Control Software: Forward sensor data
+        Control Software->Control Software: Update sensor data
+        Control Software->User: Display sensor data
+    end
+else Connection not established
+    Control Software->User: Display error message
+end

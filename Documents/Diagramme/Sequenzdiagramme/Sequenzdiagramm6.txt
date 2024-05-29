@@ -1,0 +1,20 @@
+title Server Line Following Mode Activation Sequence Diagram
+
+User->Control Software: Start
+Control Software->Server: Establish connection
+alt Connection established
+    User->Control Software: Activate line following mode button
+    Control Software->Server: Send line following mode activation command
+    Server->Server: Activate line following mode
+    Server->Control Software: Notify activation success
+    loop Real-time control in line following mode
+        Server->MBot: Check front light sensors for surface brightness
+        alt Dark surface detected
+            Server->MBot: Send line following command to adjust left or right
+        else Bright surface detected
+            Server->MBot: Send stop command
+        end
+    end
+else Connection not established
+    Control Software->User: Display error message
+end
