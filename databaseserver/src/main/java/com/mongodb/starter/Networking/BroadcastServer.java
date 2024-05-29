@@ -53,6 +53,8 @@ public class BroadcastServer {
                     LOGGER.info("[BROADCAST]\t\tResponse: " + senderAddress + ":" + senderPort + " - " + responseMessage);
                     if(!mbotSockets.contains(senderAddress)){
                         mbotSockets.add(senderAddress);
+                    }else{
+                        LOGGER.info("[BROADCAST]\t\tIP Already registered!");
                     }
                 }
 
