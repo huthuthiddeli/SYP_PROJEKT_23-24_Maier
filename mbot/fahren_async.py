@@ -156,8 +156,9 @@ def receiving_coroutine(tcp_socket):
     TRY_CONNECT = False
     
     while not STOP_THREADS:
+        suicide = False
         if ANTI_SUICE_ON:
-            check_suicide()
+            suicide = check_suicide()
             
         try:
             data = tcp_socket.recv(1024)
@@ -184,7 +185,7 @@ def receiving_coroutine(tcp_socket):
                     cpi.console.println(str(left)+":"+str(right))
                     
                     if ANTI_SUICE_ON:
-                        if left < 0 and right < 0:
+                        if not suicide:
                             move(left, right)
                     else:
                         move(left, right)
@@ -247,6 +248,9 @@ def check_suicide():
     if SensorData.read_sensor_data().ultrasonic < 15:
         cpi.audio.play("meow")
         stop_motors()
+        cpi.mbot2.backward(speed = 30, run_time = 2)
+        return True
+    return False
     
 
 def stop_motors():
