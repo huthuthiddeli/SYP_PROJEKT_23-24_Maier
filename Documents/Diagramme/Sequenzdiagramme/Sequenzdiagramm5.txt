@@ -1,0 +1,42 @@
+title mBot Safety Mode Activation Sequence Diagram
+
+User->Control Software: Start
+Control Software->Server: Establish connection
+alt Connection established
+    User->Control Software: Activate safety mode button
+    Control Software->Server: Send safety mode activation command
+    Server->MBot: Send safety mode activation command
+    alt Command executed successfully
+        MBot->MBot: Activate safety mode
+        MBot->Control Software: Visualize safety mode activation
+    else Command execution failed
+        MBot->Control Software: Display error message
+    end
+    loop Real-time control in safety mode
+        User->Control Software: Send control commands
+        Control Software->Server: Send control commands
+        Server->MBot: Send control commands
+        alt Command executed successfully
+            MBot->MBot: Check for obstructing objects
+            alt Obstructing objects detected
+                MBot->MBot: Stop and wait for obstruction removal or bypass
+            else No obstructing objects
+                MBot->MBot: Execute control commands
+                MBot->Control Software: Visualize control commands execution
+            end
+        else Command execution failed
+            MBot->Control Software: Display error message
+        end
+    end
+    User->Control Software: Deactivate safety mode button
+    Control Software->Server: Send safety mode deactivation command
+    Server->MBot: Send safety mode deactivation command
+    alt Command executed successfully
+        MBot->MBot: Deactivate safety mode
+        MBot->Control Software: Visualize safety mode deactivation
+    else Command execution failed
+        MBot->Control Software: Display error message
+    end
+else Connection not established
+    Control Software->User: Display error message
+end

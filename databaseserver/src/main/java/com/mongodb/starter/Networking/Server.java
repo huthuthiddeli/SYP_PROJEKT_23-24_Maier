@@ -1,9 +1,7 @@
 package com.mongodb.starter.Networking;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.starter.ConnectionType;
-import com.mongodb.starter.dtos.ClientDTO;
 import com.mongodb.starter.dtos.MbotDTO;
 import com.mongodb.starter.models.Command;
 import com.mongodb.starter.models.MbotEntity;
@@ -13,7 +11,6 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.logging.ConsoleHandler;
@@ -22,9 +19,6 @@ public class Server {
 
     private static Server INSTANCE;
     private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
-
-    private ArrayList<Command> commandList = new ArrayList<>();
-
     private ArrayList<Socket> connectedSockets = new ArrayList<>();
     private final ObjectMapper mapper = new ObjectMapper();
     private OutputStream stream;
@@ -48,6 +42,7 @@ public class Server {
 
                 //check if ip address is already registered
                 if(IsRegisteredSocket(clientSocket)){
+                    LOGGER.info("[SERVER]\t\t\tSocket: " + clientSocket.getInetAddress().toString() + " is already registered!");
                     continue;
                 }
                 
@@ -132,9 +127,32 @@ public class Server {
                 return false;
             }
 
+
+
+            try{
+                s.getOutputStream().write(1);
+                s.getOutputStream().flush();
+            }catch (IOException ex){
+                BroadcastServer.ResetClient();
+                System.out.println("Client is not alive: " + ex.getMessage());
+                return false;
+            }
+
+
+
             stream = s.getOutputStream();
             
-            ClientDTO cd = new ClientDTO(m.getUltrasonic(), m.getAngles(), m.getSound(), m.getFront_light_sensors(), m.getShake(), m.getLight(), ConnectionType.CONNECTION_ALIVE, m.getIP());
+            m = new MbotDTO(
+                    m.getUltrasonic(),
+                    m.getAngles(),
+                    m.getSound(),
+                    m.getFront_light_sensors(),
+                    m.getShake(),
+                    m.getLight(),
+                    ConnectionType.CONNECTION_ALIVE,
+                    m.getIP()
+                )   
+                .toMbotEntity();
 
             stream.write(mapper.writeValueAsBytes(cd));
             stream.flush();
@@ -163,26 +181,37 @@ public class Server {
 
     private void IsStillConnected() throws IOException {
         for(Socket s : connectedSockets){
-            if(!s.isConnected()){
-                s.close();
+            try {
+                s.getOutputStream().write(1);
+                s.getOutputStream().flush();
+            } catch (IOException e) {
+                System.out.println("Socket is not alive: " + e.getMessage());
+                connectedSockets.remove(s);
+                for(InetAddress broadcastSocket : BroadcastServer.getMbotSockets()){
+                    if(Objects.equals(broadcastSocket.toString(), s.getInetAddress().toString())){
+                        LOGGER.info("[SERVER]\t\tSocket has been disconnected: " + broadcastSocket.toString());
+                        BroadcastServer.getMbotSockets().remove(broadcastSocket);
+                    }
+                }
             }
         }
     }
 
     //IF IP IS ALREADY IN LIST SKIP ACTIONS
-    private boolean IsRegisteredSocket(Socket address){
+    private boolean IsRegisteredSocket(Socket address) throws IOException{
         if(address == null){
             return false;
         }
 
         for(Socket s : connectedSockets){
+            IsStillConnected();
+
             if(Objects.equals(s.getInetAddress(), address.getInetAddress())){
                 return true;
             }
         }
 
         connectedSockets.add(address);
-
         return false;
     }
 
@@ -245,9 +274,5 @@ public class Server {
         }
 
         return INSTANCE;
-    }
-
-    public void addToCommandList(Command m){
-        this.commandList.add(m);
     }
 }

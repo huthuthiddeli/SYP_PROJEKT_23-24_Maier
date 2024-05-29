@@ -1,0 +1,16 @@
+title mBot LED Color Control Sequence Diagram
+
+User->Control Software: Start
+Control Software->Server: Establish connection
+alt Connection established
+    User->Control Software: Select LED color using Color Picker
+    Control Software->Server: Send selected color (RGB values)
+    Server->MBot: Send LED color command (RGB values)
+    alt Command executed successfully
+        MBot->MBot: Set LED color to the received RGB values
+    else Command execution failed
+        MBot->Control Software: Display error message
+    end
+else Connection not established
+    Control Software->User: Display error message
+end

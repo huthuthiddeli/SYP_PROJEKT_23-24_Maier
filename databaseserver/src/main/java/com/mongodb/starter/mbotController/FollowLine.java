@@ -22,13 +22,6 @@ public class FollowLine {
 
 
 
-        
-
-
-
-
-
-
         return command;
     }
 

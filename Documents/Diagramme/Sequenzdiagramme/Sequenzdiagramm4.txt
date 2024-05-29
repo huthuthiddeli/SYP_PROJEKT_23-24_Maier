@@ -1,0 +1,18 @@
+title mBot Control Sequence Diagram
+
+User->Control Software: Start
+Control Software->Server: Establish connection
+alt Connection established
+    loop Real-time control
+        User->Control Software: Perform control action (Joystick or keyboard)
+        Control Software->Server: Convert control action into command
+        Server->MBot: Send command
+        alt Command executed successfully
+            MBot->MBot: Interpret command and adjust motor values
+        else Command execution failed
+            MBot->Control Software: Display error message
+        end
+    end
+else Connection not established
+    Control Software->User: Display error message
+end
