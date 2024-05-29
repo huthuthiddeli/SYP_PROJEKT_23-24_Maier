@@ -3,18 +3,57 @@ package com.mongodb.starter.dtos;
 import com.mongodb.starter.ConnectionType;
 import com.mongodb.starter.models.MbotEntity;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.ArrayList;
 
-public record MbotDTO(float ultrasonic, ArrayList<Integer> angles, int sound, ArrayList<Integer> front_light_sensors,
-                      int shake, int light, ConnectionType type, String IP) {
+
+@Getter
+@Setter
+public class MbotDTO {
+    private float ultrasonic;
+    private ArrayList<Integer> angles;
+    private int sound;
+    private ArrayList<Integer> front_light_sensors;
+    private int shake;
+    private int light;
+    private ConnectionType type;
+    private String ip;
+
+    public MbotDTO(){}
+
+    // Constructor with parameters
+    public MbotDTO(float ultrasonic, ArrayList<Integer> angles, int sound, 
+        ArrayList<Integer> front_light_sensors, int shake, int light, 
+        ConnectionType type, String ip) {
+        this.ultrasonic = ultrasonic;
+        this.angles = angles;
+        this.sound = sound;
+        this.front_light_sensors = front_light_sensors;
+        this.shake = shake;
+        this.light = light;
+        this.type = type;
+        this.ip = ip;
+    }
 
     public MbotDTO(MbotEntity c) {
-        this(c.getUltrasonic(), c.getAngles(), c.getSound(), c.getFront_light_sensors(), c.getShake(), c.getLight(), c.getType(), c.getIP());
+        this.ultrasonic = c.getUltrasonic();
+        this.angles = c.getAngles();
+        this.sound = c.getSound();
+        this.front_light_sensors = c.getFront_light_sensors();
+        this.shake = c.getShake();
+        this.light = c.getLight();
+        this.type = c.getType();
+        this.ip = c.getIP();
+    }
+
+    public ClientDTO toClientDTO(){
+        return new ClientDTO(ultrasonic(), angles(), sound(), front_light_sensors(), shake(), light(), type(), IP());
     }
 
     public MbotEntity toMbotEntity() {
-        //ObjectId _id = objectID == null ? new ObjectId() : new ObjectId(objectID);
-        return new MbotEntity(ultrasonic, angles, sound, front_light_sensors, shake, light, type, IP);
+        return new MbotEntity(ultrasonic, angles, sound, front_light_sensors, shake, light, type, ip);
     }
 
     @Override
@@ -27,7 +66,6 @@ public record MbotDTO(float ultrasonic, ArrayList<Integer> angles, int sound, Ar
                 ", shake=" + shake +
                 ", light=" + light +
                 ", type=" + type +
-                ", IP='" + IP + '\'' +
                 '}';
     }
 }

@@ -1,9 +1,7 @@
 package com.mongodb.starter.Networking;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.starter.ConnectionType;
-import com.mongodb.starter.dtos.ClientDTO;
 import com.mongodb.starter.dtos.MbotDTO;
 import com.mongodb.starter.models.Command;
 import com.mongodb.starter.models.MbotEntity;
@@ -13,17 +11,14 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.logging.ConsoleHandler;
 
 public class Server {
 
     private static Server INSTANCE;
     private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
-
-    private ArrayList<Command> commandList = new ArrayList<>();
-
     private ArrayList<Socket> connectedSockets = new ArrayList<>();
     private final ObjectMapper mapper = new ObjectMapper();
     private OutputStream stream;
@@ -47,6 +42,7 @@ public class Server {
 
                 //check if ip address is already registered
                 if(IsRegisteredSocket(clientSocket)){
+                    LOGGER.info("[SERVER]\t\t\tSocket: " + clientSocket.getInetAddress().toString() + " is already registered!");
                     continue;
                 }
                 
@@ -71,7 +67,7 @@ public class Server {
         try {
             //INFO WHEN CONNECTED SOCKETS INCREASE
             if(prevSize == 0 || prevSize != connectedSockets.size()){
-                LOGGER.info("[SERVER]\t\t\t" + String.valueOf("Size of List: " + connectedSockets.size()));
+                LOGGER.info("[SERVER]\t\t\t" + String.valueOf("Connected Devices: " + connectedSockets.size()));
                 prevSize = connectedSockets.size();
             }
 
@@ -85,12 +81,20 @@ public class Server {
             stream.write(command.getName().getBytes(StandardCharsets.UTF_8));
             stream.flush();
 
-            LOGGER.info("[SERVER]\t\t\tCommand: " + command.toString() + " sent to: " + s.toString());
+            if(counter >= 25){
+                LOGGER.info("[SERVER]\t\t\tCommand: " + command.toString() + " sent to: " + s.toString());
+                counter = 0;
+            }else{
+                counter++;
+            }
 
 
         }catch (Exception ex){
             LOGGER.error("[SERVER]\t\t\tERROR:" + ex.getMessage());
             LOGGER.error("[SERVER]\t\t\tRestart Mbot with ip: " + command.getSocket());
+
+
+
 
             return false;
         }
@@ -98,7 +102,10 @@ public class Server {
         return true;
     }
 
-    public boolean SendSensorDataToClient(MbotEntity m){
+    public boolean SendSensorDataToClient(MbotEntity m) throws NullPointerException, InterruptedException, IOException {
+
+        Thread.sleep(1000);
+
         String clientSocketString = BroadcastServer.getClientSocket().split(":")[0];
 
         Socket s = new Socket();
@@ -111,6 +118,8 @@ public class Server {
                 if(counter > 25){
                     LOGGER.info("[SERVER]\t\t\tThere was no client registered!");
                     counter = 0;
+                }else if(counter > 12){
+                    LOGGER.info("[SERVER]\t\t\tData sent to: " + s.getInetAddress().toString());
                 }else{
                     counter++;
                 }
@@ -119,23 +128,48 @@ public class Server {
             }
 
 
-            if(!s.isConnected()){
+
+            try{
+                s.getOutputStream().write(1);
+                s.getOutputStream().flush();
+            }catch (IOException ex){
                 BroadcastServer.ResetClient();
+                System.out.println("Client is not alive: " + ex.getMessage());
                 return false;
             }
 
+
+
             stream = s.getOutputStream();
             
-            m = new MbotDTO(m.getUltrasonic(), m.getAngles(), m.getSound(), m.getFront_light_sensors(), m.getShake(), m.getLight(), ConnectionType.CONNECTION_ALIVE, m.getIP()).toMbotEntity();
+            m = new MbotDTO(
+                    m.getUltrasonic(),
+                    m.getAngles(),
+                    m.getSound(),
+                    m.getFront_light_sensors(),
+                    m.getShake(),
+                    m.getLight(),
+                    ConnectionType.CONNECTION_ALIVE,
+                    m.getIP()
+                )   
+                .toMbotEntity();
 
-            stream.write(mapper.writeValueAsBytes(m));
+            stream.write(mapper.writeValueAsBytes(cd));
             stream.flush();
 
-            LOGGER.info("[SERVER]\t\t\tData sent to: " + s.getInetAddress().toString());
         } catch (IOException e) {
+            stream = TetermineRightSocketClient(BroadcastServer.getClientSocket()).getOutputStream();
+
+            ClientDTO deadConnection = new ClientDTO(m.getUltrasonic(), m.getAngles(), m.getSound(), m.getFront_light_sensors(), m.getShake(), m.getLight(), ConnectionType.CONNECTION_CLOSED, m.getIP());
+
+            stream.write(mapper.writeValueAsBytes(deadConnection));
+            stream.flush();
+
+            BroadcastServer.ResetClient();
+            connectedSockets.remove(s);
+
             LOGGER.error("[SERVER]\t\t\t Error sending data to client (SensordatatTOClient): " + e.getMessage());
             LOGGER.error(e.toString());
-            connectedSockets.remove(s);
             return false;
         }
 
@@ -147,33 +181,43 @@ public class Server {
 
     private void IsStillConnected() throws IOException {
         for(Socket s : connectedSockets){
-            if(!s.isConnected()){
-                s.close();
+            try {
+                s.getOutputStream().write(1);
+                s.getOutputStream().flush();
+            } catch (IOException e) {
+                System.out.println("Socket is not alive: " + e.getMessage());
+                connectedSockets.remove(s);
+                for(InetAddress broadcastSocket : BroadcastServer.getMbotSockets()){
+                    if(Objects.equals(broadcastSocket.toString(), s.getInetAddress().toString())){
+                        LOGGER.info("[SERVER]\t\tSocket has been disconnected: " + broadcastSocket.toString());
+                        BroadcastServer.getMbotSockets().remove(broadcastSocket);
+                    }
+                }
             }
         }
     }
 
     //IF IP IS ALREADY IN LIST SKIP ACTIONS
-    private boolean IsRegisteredSocket(Socket address){
+    private boolean IsRegisteredSocket(Socket address) throws IOException{
         if(address == null){
             return false;
         }
 
         for(Socket s : connectedSockets){
+            IsStillConnected();
+
             if(Objects.equals(s.getInetAddress(), address.getInetAddress())){
                 return true;
             }
         }
 
         connectedSockets.add(address);
-
         return false;
     }
 
     private boolean IsRegisteredString(String socket){
         for(Socket s : connectedSockets) {
             if (Objects.equals(s.getInetAddress().toString(), socket)) {
-
                 if(!s.isConnected()){
                     connectedSockets.remove(s);
                     return false;
@@ -197,15 +241,18 @@ public class Server {
             }
         }
 
-        LOGGER.error("[SERVER]\t\t\tNo Mbot-Sockets matching!");
+        if(counter >= 25){
+            LOGGER.error("[SERVER]\t\t\tNo Mbot-Sockets matching!");
+            counter = 0;
+        }else{
+            counter++;
+        }
 
         return null;
     }
 
     private Socket TetermineRightSocketClient(String address){
         for(Socket s : connectedSockets){
-            LOGGER.info(s.getInetAddress().toString() +"  " + address.toString());
-            LOGGER.info(String.valueOf(s.getInetAddress().toString().equals(address)));
             if(Objects.equals(s.getInetAddress().toString(), address)){
                 return s;
             }
@@ -227,9 +274,5 @@ public class Server {
         }
 
         return INSTANCE;
-    }
-
-    public void addToCommandList(Command m){
-        this.commandList.add(m);
     }
 }
