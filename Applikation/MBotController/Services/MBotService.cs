@@ -103,7 +103,7 @@ namespace MBotController.Services
             var list = res.Result;
             MBots.AddRange(list);
 
-            foreach(MBot mbot in list)
+            foreach (MBot mbot in list)
             {
                 mbot.CalcLightColors().Wait();
                 mbot.RandomColor();
@@ -112,8 +112,8 @@ namespace MBotController.Services
             TcpClient = new TcpClient();
             TcpClient.Connect(IPAddress.Parse(IP), 5000);
 
-            //this.Thread = new Thread(ReceiveData);
-            //this.Thread.Start();
+            this.Thread = new Thread(ReceiveData);
+            this.Thread.Start();
         }
 
         public static IPAddress? GetLocalIP()
@@ -134,34 +134,40 @@ namespace MBotController.Services
         {
             while (true)
             {
-                Stream stream = TcpClient.GetStream();
-                // Buffer to store the response bytes.
-                byte[] data = new byte[256];
-
-                // String to store the response ASCII representation.
-                string json = string.Empty;
-
-                // Read the first batch of the TcpServer response bytes.
-                int bytes = stream.Read(data, 0, data.Length);
-                json = Encoding.ASCII.GetString(data, 0, bytes);
-
-                JsonSerializerOptions options = new JsonSerializerOptions();
-                options.PropertyNameCaseInsensitive = true;
-                options.Converters.Add(new JsonStringEnumConverter());
-                MBot? bot = JsonSerializer.Deserialize<MBot>(json, options);
-                Debug.WriteLine(bot.IP);
-
-                if (bot is not null)
+                try
                 {
-                    MBot? curr = MBots.Find(m => m.IP == "/" + bot.IP);
+                    Stream stream = TcpClient.GetStream();
+                    // Buffer to store the response bytes.
+                    byte[] data = new byte[256];
 
-                    if (curr is not null)
+                    // String to store the response ASCII representation.
+                    string json = string.Empty;
+
+                    // Read the first batch of the TcpServer response bytes.
+                    int bytes = stream.Read(data, 0, data.Length);
+                    json = Encoding.ASCII.GetString(data, 0, bytes);
+
+                    JsonSerializerOptions options = new JsonSerializerOptions();
+                    options.PropertyNameCaseInsensitive = true;
+                    options.Converters.Add(new JsonStringEnumConverter());
+                    MBot? bot = JsonSerializer.Deserialize<MBot>(json, options);
+
+                    if (bot is not null)
                     {
-                        curr.Copy(bot);
-                    }
-                }
+                        MBot? curr = MBots.Find(m => m.IP == "/" + bot.IP);
 
-                Thread.Sleep(100);
+                        if (curr is not null)
+                        {
+                            curr.Copy(bot);
+                        }
+                    }
+
+                    Thread.Sleep(100);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
             }
         }
 
@@ -198,6 +204,27 @@ namespace MBotController.Services
 
                 await Task.Delay(333);
             }
+        }
+
+        public async void SwitchAutoPilotMode(bool turnedOn)
+        {
+            NetworkStream stream = TcpClient.GetStream();
+
+            bool autoPilot = turnedOn;
+            byte[] data = JsonSerializer.SerializeToUtf8Bytes(autoPilot);
+
+            await stream.WriteAsync(Encoding.UTF8.GetBytes("autoPilot:" + turnedOn));
+        }
+
+        public async void SwitchSuicidePreventionMode(bool turnedOn)
+        {
+            NetworkStream stream = TcpClient.GetStream();
+
+            bool preventCollision = turnedOn;
+            string json = JsonSerializer.Serialize(preventCollision);
+            byte[] data = JsonSerializer.SerializeToUtf8Bytes(preventCollision);
+
+            await stream.WriteAsync(Encoding.UTF8.GetBytes("preventCollision:" + turnedOn));
         }
     }
 }

@@ -77,7 +77,6 @@ internal partial class MBotDetailView : UserControl
         }
 
         MBotService.Instance.Command = cmd;
-        Debug.WriteLine(MBotService.Instance.Command);
     }
 
     private void HomeBtnClick(object sender, RoutedEventArgs e)
@@ -121,8 +120,6 @@ internal partial class MBotDetailView : UserControl
 
             var context = this.DataContext as MBotDetailViewModel;
             MBotService.Instance.Command = new Command($"{(-normalizedY).ToString(CultureInfo.InvariantCulture)};{(normalizedX).ToString(CultureInfo.InvariantCulture)}", context.Bot.IP);
-
-            Debug.WriteLine(MBotService.Instance.Command);
         }
     }
 
@@ -133,7 +130,16 @@ internal partial class MBotDetailView : UserControl
 
         var context = this.DataContext as MBotDetailViewModel;
         MBotService.Instance.Command = new Command("0;0", context.Bot.IP);
-
-        Debug.WriteLine(MBotService.Instance.Command);
     }
+
+    public void APBtnToggled(object sender, RoutedEventArgs e)
+    {
+        MBotService.Instance.SwitchAutoPilotMode((bool)apBtn.IsChecked);
+    }
+
+    public void SPBtnToggled(object sender, RoutedEventArgs e)
+    {
+        MBotService.Instance.SwitchSuicidePreventionMode((bool)apBtn.IsChecked);
+    }
+
 }
