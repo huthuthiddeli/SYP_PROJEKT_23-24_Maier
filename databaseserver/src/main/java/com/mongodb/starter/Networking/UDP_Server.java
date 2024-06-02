@@ -29,14 +29,11 @@ public class UDP_Server {
 
             while(true){
                 byte[] buffer = new byte[1024];
-
                 DatagramPacket packet =  new DatagramPacket(buffer, buffer.length);
-
                 serverSocket.receive(packet);
 
                 InetAddress senderAddress = packet.getAddress();
                 int senderPort = packet.getPort();
-
 
                 LOGGER.info("[UDP-SERVER]\t\tMessage received from: " + senderAddress + ":" + senderPort);
 
@@ -61,7 +58,6 @@ public class UDP_Server {
             }
         }
 
-
         return null;
     }
 
@@ -71,7 +67,6 @@ public class UDP_Server {
             byte[] buffer = m.getName().getBytes(StandardCharsets.UTF_8);
 
             InetAddress MbotAdress = GetRigtMbotSocket(m);
-
             if(MbotAdress == null){
                 LOGGER.info("[UDP_Server]\t\tNo Mbot with this address has been found: " + m.getSocket());
                 return false;

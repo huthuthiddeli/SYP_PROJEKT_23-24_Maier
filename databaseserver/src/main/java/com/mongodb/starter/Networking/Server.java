@@ -22,6 +22,9 @@ public class Server {
     private ArrayList<Socket> connectedSockets = new ArrayList<>();
     private final ObjectMapper mapper = new ObjectMapper();
     private OutputStream stream;
+    private static boolean preventCollision = false;
+    private static boolean autoPilot = false;
+    private static MbotDTO lastPackage;
 
     private int prevSize = 0;
     private int counter = 0;
@@ -38,15 +41,28 @@ public class Server {
             while(true) {
                 Socket clientSocket = serverSocket.accept(); // Accept incoming client connections
 
-                LOGGER.info("[SERVER]\t\t\tConnection from: " + clientSocket.getInetAddress().getHostAddress());
+                LOGGER.info("[SERVER]\t\t\tNew Connection on: " + clientSocket.getInetAddress().toString());
 
                 //check if ip address is already registered
                 if(IsRegisteredSocket(clientSocket)){
                     LOGGER.info("[SERVER]\t\t\tSocket: " + clientSocket.getInetAddress().toString() + " is already registered!");
-                    continue;
                 }
-                
-                IsStillConnected();
+
+                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+                String line;
+
+                if((line = in.readLine()) != null){
+                    LOGGER.info(line);
+
+                    String splitted[] = line.split(":");
+
+                    if(Objects.equals(splitted[0], "preventCollision")){
+                        preventCollision = Boolean.parseBoolean(splitted[1]);
+                    }else if(Objects.equals(splitted[0], "autoPilot")){
+
+                    }
+                }
             }
         } catch (IOException e) {
            LOGGER.error("[SERVER]\t\t\tError occurred while running the server: " + e.getMessage());
@@ -56,13 +72,14 @@ public class Server {
     }
 
     public boolean SendCommandToClient(Command command) throws IOException, InterruptedException {
+        IsStillConnected();
+
         Socket s = TetermineRightSocketMbot(command);
 
         if(s == null){
-            LOGGER.info("[SERVER]\t\t\tSockets: " +  s.toString());
+            LOGGER.info("[SERVER]\t\t\tSocket is null!");
             return false;
         }
-
 
         try {
             //INFO WHEN CONNECTED SOCKETS INCREASE
@@ -71,12 +88,15 @@ public class Server {
                 prevSize = connectedSockets.size();
             }
 
-            //DELETE IF THE CONNECTION IS NOT UP ANYMORE
-            if(!s.isConnected()){
-                LOGGER.info("[SERVER]\t\t\tIs not connected anymore!");
-                connectedSockets.remove(s);
-            }
             stream = s.getOutputStream();
+
+            if(GetPreventCollision()){
+                command = new Command("ANTISUICIDE_ON" , command.getSocket());
+                stream.write(command.getName().getBytes(StandardCharsets.UTF_8));
+            }else if(!GetPreventCollision()){
+                command = new Command("ANTISUICIDE_OFF", command.getSocket());
+                stream.write(command.getName().getBytes(StandardCharsets.UTF_8));
+            }
 
             stream.write(command.getName().getBytes(StandardCharsets.UTF_8));
             stream.flush();
@@ -93,9 +113,6 @@ public class Server {
             LOGGER.error("[SERVER]\t\t\tERROR:" + ex.getMessage());
             LOGGER.error("[SERVER]\t\t\tRestart Mbot with ip: " + command.getSocket());
 
-
-
-
             return false;
         }
 
@@ -103,42 +120,30 @@ public class Server {
     }
 
     public boolean SendSensorDataToClient(MbotEntity m) throws NullPointerException, InterruptedException, IOException {
+        lastPackage = m.ToMbotDTO();
 
-        Thread.sleep(1000);
+        String clientSocketString = "";
+        if(BroadcastServer.getClientSocket() == null){
+            return false;
+        }
 
-        String clientSocketString = BroadcastServer.getClientSocket().split(":")[0];
-
+        clientSocketString = BroadcastServer.getClientSocket().split(":")[0];
         Socket s = new Socket();
+        IsStillConnected();
 
         try{
-
             s = TetermineRightSocketClient(clientSocketString);
 
+            //check for null
             if(s == null){
                 if(counter > 25){
                     LOGGER.info("[SERVER]\t\t\tThere was no client registered!");
                     counter = 0;
-                }else if(counter > 12){
-                    LOGGER.info("[SERVER]\t\t\tData sent to: " + s.getInetAddress().toString());
                 }else{
                     counter++;
                 }
-
                 return false;
             }
-
-
-
-            try{
-                s.getOutputStream().write(1);
-                s.getOutputStream().flush();
-            }catch (IOException ex){
-                BroadcastServer.ResetClient();
-                System.out.println("Client is not alive: " + ex.getMessage());
-                return false;
-            }
-
-
 
             stream = s.getOutputStream();
             
@@ -151,18 +156,15 @@ public class Server {
                     m.getLight(),
                     ConnectionType.CONNECTION_ALIVE,
                     m.getIP()
-                )   
-                .toMbotEntity();
+            ).toMbotEntity();
 
-            stream.write(mapper.writeValueAsBytes(cd));
+            stream.write(mapper.writeValueAsBytes(m));
             stream.flush();
 
         } catch (IOException e) {
             stream = TetermineRightSocketClient(BroadcastServer.getClientSocket()).getOutputStream();
 
-            ClientDTO deadConnection = new ClientDTO(m.getUltrasonic(), m.getAngles(), m.getSound(), m.getFront_light_sensors(), m.getShake(), m.getLight(), ConnectionType.CONNECTION_CLOSED, m.getIP());
-
-            stream.write(mapper.writeValueAsBytes(deadConnection));
+            stream.write(mapper.writeValueAsBytes(m));
             stream.flush();
 
             BroadcastServer.ResetClient();
@@ -172,8 +174,6 @@ public class Server {
             LOGGER.error(e.toString());
             return false;
         }
-
-
         return true;
     }
 
@@ -203,9 +203,10 @@ public class Server {
             return false;
         }
 
-        for(Socket s : connectedSockets){
-            IsStillConnected();
+        //CHECK IF ALL SOCKETS ARE STILL ALIVE
+        IsStillConnected();
 
+        for(Socket s : connectedSockets){
             if(Objects.equals(s.getInetAddress(), address.getInetAddress())){
                 return true;
             }
@@ -233,6 +234,7 @@ public class Server {
     private Socket TetermineRightSocketMbot(Command command){
         if(connectedSockets.isEmpty()){
             LOGGER.error("[SERVER]\t\t\tNO SOCKETS!");
+            return null;
         }
 
         for (Socket connectedSocket : connectedSockets) {
@@ -274,5 +276,18 @@ public class Server {
         }
 
         return INSTANCE;
+    }
+
+    public static boolean GetAutoPilot(){
+        return autoPilot;
+    }
+
+
+    public static boolean GetPreventCollision(){
+        return preventCollision;
+    }
+
+    public static MbotDTO GetLastPackage(){
+        return lastPackage;
     }
 }

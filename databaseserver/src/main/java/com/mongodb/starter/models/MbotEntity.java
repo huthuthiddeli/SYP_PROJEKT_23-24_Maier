@@ -60,6 +60,9 @@ public class MbotEntity {
         this.IP = ip;
     }
 
+    public MbotDTO ToMbotDTO(){
+        return new MbotDTO(this);
+    }
     public float getUltrasonic() {
         return ultrasonic;
     }

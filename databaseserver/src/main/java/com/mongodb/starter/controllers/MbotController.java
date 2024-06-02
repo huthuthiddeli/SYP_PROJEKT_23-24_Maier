@@ -9,8 +9,6 @@ import com.mongodb.starter.Networking.UDP_Server;
 import com.mongodb.starter.dtos.MbotDTO;
 import com.mongodb.starter.models.Command;
 import com.mongodb.starter.services.ActualMbotService;
-import com.mongodb.starter.models.MbotEntity;
-import com.mongodb.starter.services.ActualService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -171,8 +169,7 @@ public class MbotController {
                     );
         }else{
 
-            LOGGER.info("[MbotController]\tNORMAL DATA SEND: ");
-            LOGGER.info(String.valueOf(BroadcastServer.getMbotSockets().size()));
+            LOGGER.info("[MbotController]\tMbots connected: " + BroadcastServer.getMbotSockets().size());
 
             for(InetAddress s : BroadcastServer.getMbotSockets()){
                 list.add(new MbotDTO(0f, 

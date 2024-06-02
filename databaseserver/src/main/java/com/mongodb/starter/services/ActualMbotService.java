@@ -3,7 +3,6 @@ package com.mongodb.starter.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.starter.dtos.MbotDTO;
-import com.mongodb.starter.models.MbotEntity;
 import com.mongodb.starter.repositories.ActualMbotRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,9 +16,9 @@ import java.util.List;
 public class ActualMbotService {
     private final ActualMbotRepository repository;
     private static final Logger LOGGER = LoggerFactory.getLogger(ActualMbotService.class);
-    @Autowired
+
     private ObjectMapper objectMapper;
-    @Autowired
+
     private MongoTemplate mongoTemplate;
 
     @Autowired
