@@ -19,7 +19,8 @@ namespace MBotController.Services
 {
     internal class MBotService
     {
-        public static MBotService Instance { get; } = new MBotService();
+        private static MBotService _instance = new MBotService();
+        public static MBotService Instance { get { return _instance; } }
         private string IP { get; set; }
         private int Port { get; set; }
         public Command? Command { get; set; }
@@ -28,6 +29,7 @@ namespace MBotController.Services
         public List<MBot> MBots { get; set; }
         public TcpClient TcpClient { get; set; }
         public Thread Thread { get; set; }
+        public event EventHandler Reset;
         //TODO: Get MBots from server, otherwise use test data for debug purposes
 
         private MBotService()
@@ -164,9 +166,12 @@ namespace MBotController.Services
 
                     Thread.Sleep(100);
                 }
-                catch (Exception ex)
+                catch (SocketException ex)
                 {
-                    Debug.WriteLine(ex.Message);
+                    await Console.Out.WriteLineAsync("lost connection");
+                    Reset?.Invoke(this, EventArgs.Empty);
+                    _instance = new MBotService();
+                    return;
                 }
             }
         }

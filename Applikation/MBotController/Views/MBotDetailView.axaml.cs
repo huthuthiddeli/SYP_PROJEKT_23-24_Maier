@@ -44,6 +44,13 @@ internal partial class MBotDetailView : UserControl
         Handle.PointerPressed += Canvas_PointerPressed;
         Handle.PointerReleased += Canvas_PointerReleased;
         Handle.PointerMoved += Canvas_PointerMoved;
+
+        MBotService.Instance.Reset += Reset;
+    }
+
+    public void Reset(object s, EventArgs e)
+    {
+        this.Content = new MBotLandingView();
     }
 
     public IBrush LightColorAtIndex(int i)
