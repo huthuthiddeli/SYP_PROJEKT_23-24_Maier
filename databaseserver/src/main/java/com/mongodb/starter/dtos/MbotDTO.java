@@ -48,10 +48,6 @@ public class MbotDTO {
         this.ip = c.getIP();
     }
 
-    public ClientDTO toClientDTO(){
-        return new ClientDTO(ultrasonic(), angles(), sound(), front_light_sensors(), shake(), light(), type(), IP());
-    }
-
     public MbotEntity toMbotEntity() {
         return new MbotEntity(ultrasonic, angles, sound, front_light_sensors, shake, light, type, ip);
     }
