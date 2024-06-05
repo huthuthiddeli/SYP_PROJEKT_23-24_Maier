@@ -11,6 +11,9 @@ using Avalonia.Controls;
 
 namespace MBotController.Models
 {
+    /// <summary>
+    /// Class representing the MBot.
+    /// </summary>
     internal class MBot
     {
         [JsonIgnore]

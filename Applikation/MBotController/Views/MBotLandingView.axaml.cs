@@ -23,7 +23,6 @@ public partial class MBotLandingView : UserControl
         {
             this.DataContext = new MBotLandingViewModel(MBotService.Instance.MBots);
         }
-
     }
 
     private void Border_PointerPressed(object sender, PointerPressedEventArgs args)

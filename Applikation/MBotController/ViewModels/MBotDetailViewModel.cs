@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace MBotController.ViewModels
 {
+    /// <summary>
+    /// View showing all relevant MBot data and controlls.
+    /// </summary>
     internal class MBotDetailViewModel : ViewModelBase
     {
         public MBot Bot { get; set; }
