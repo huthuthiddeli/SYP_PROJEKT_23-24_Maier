@@ -71,11 +71,6 @@ public class Server {
                 prevSize = connectedSockets.size();
             }
 
-            //DELETE IF THE CONNECTION IS NOT UP ANYMORE
-            if(!s.isConnected()){
-                LOGGER.info("[SERVER]\t\t\tIs not connected anymore!");
-                connectedSockets.remove(s);
-            }
             stream = s.getOutputStream();
 
             stream.write(command.getName().getBytes(StandardCharsets.UTF_8));
@@ -274,5 +269,13 @@ public class Server {
         }
 
         return INSTANCE;
+    }
+
+    public static boolean GetAutoPilot(){
+        return autoPilot;
+    }
+
+    public static MbotDTO GetLastPackage(){
+        return lastPackage;
     }
 }
