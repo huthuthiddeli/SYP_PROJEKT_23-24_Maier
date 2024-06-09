@@ -17,9 +17,13 @@ using Avalonia.Threading;
 
 namespace MBotController.Services
 {
+    /// <summary>
+    /// Service that is responsible with the commmunication to the server.
+    /// </summary>
     internal class MBotService
     {
-        public static MBotService Instance { get; } = new MBotService();
+        private static MBotService _instance = new MBotService();
+        public static MBotService Instance { get { return _instance; } }
         private string IP { get; set; }
         private int Port { get; set; }
         public Command? Command { get; set; }
@@ -28,6 +32,7 @@ namespace MBotController.Services
         public List<MBot> MBots { get; set; }
         public TcpClient TcpClient { get; set; }
         public Thread Thread { get; set; }
+        public event EventHandler Reset;
         //TODO: Get MBots from server, otherwise use test data for debug purposes
 
         private MBotService()
@@ -38,7 +43,11 @@ namespace MBotController.Services
 
             SendCommand();
         }
-        private void SetItems()
+
+        /// <summary>
+        /// Makes broadcast and set all the mbots.
+        /// </summary>
+        private /*async*/ void SetItems()
         {
 
             /*MBots = new List<MBot>()
@@ -116,6 +125,10 @@ namespace MBotController.Services
             this.Thread.Start();
         }
 
+        /// <summary>
+        /// Gets the local IP address.
+        /// </summary>
+        /// <returns>Local IP</returns>
         public static IPAddress? GetLocalIP()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
@@ -130,6 +143,10 @@ namespace MBotController.Services
             return null;
         }
 
+        /// <summary>
+        /// Responsible for receiving data from the server asynchronously.
+        /// Resets the program when the TCP connection from the server is lost.
+        /// </summary>
         public async void ReceiveData()
         {
             while (true)
@@ -164,13 +181,19 @@ namespace MBotController.Services
 
                     Thread.Sleep(100);
                 }
-                catch (Exception ex)
+                catch (SocketException ex)
                 {
-                    Debug.WriteLine(ex.Message);
+                    await Console.Out.WriteLineAsync("lost connection");
+                    Reset?.Invoke(this, EventArgs.Empty);
+                    _instance = new MBotService();
+                    return;
                 }
             }
         }
 
+        /// <summary>
+        /// Sends commands to the server via the mbot/commandQueue route asynchrounously.
+        /// </summary>
         public async void SendCommand()
         {
             HttpClient client = new HttpClient();
@@ -206,6 +229,10 @@ namespace MBotController.Services
             }
         }
 
+        /// <summary>
+        /// Switches the autopilot mode of the mbot.
+        /// </summary>
+        /// <param name="turnedOn">Sets the autopilot mode to either on (true) or off (false)</param>
         public async void SwitchAutoPilotMode(bool turnedOn)
         {
             NetworkStream stream = TcpClient.GetStream();
@@ -216,6 +243,10 @@ namespace MBotController.Services
             await stream.WriteAsync(Encoding.UTF8.GetBytes("autoPilot:" + turnedOn));
         }
 
+        /// <summary>
+        /// Switches the suicide prevention mode of the mbot.
+        /// </summary>
+        /// <param name="turnedOn">Sets the suicide prevention mode to either on (true) or off (false)</param>
         public async void SwitchSuicidePreventionMode(bool turnedOn)
         {
             NetworkStream stream = TcpClient.GetStream();

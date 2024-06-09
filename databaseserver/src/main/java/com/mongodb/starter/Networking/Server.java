@@ -71,11 +71,6 @@ public class Server {
                 prevSize = connectedSockets.size();
             }
 
-            //DELETE IF THE CONNECTION IS NOT UP ANYMORE
-            if(!s.isConnected()){
-                LOGGER.info("[SERVER]\t\t\tIs not connected anymore!");
-                connectedSockets.remove(s);
-            }
             stream = s.getOutputStream();
 
             stream.write(command.getName().getBytes(StandardCharsets.UTF_8));
@@ -154,13 +149,13 @@ public class Server {
                 )   
                 .toMbotEntity();
 
-            stream.write(mapper.writeValueAsBytes(cd));
+            stream.write(mapper.writeValueAsBytes(m));
             stream.flush();
 
         } catch (IOException e) {
             stream = TetermineRightSocketClient(BroadcastServer.getClientSocket()).getOutputStream();
 
-            ClientDTO deadConnection = new ClientDTO(m.getUltrasonic(), m.getAngles(), m.getSound(), m.getFront_light_sensors(), m.getShake(), m.getLight(), ConnectionType.CONNECTION_CLOSED, m.getIP());
+            MbotDTO deadConnection = new MbotDTO(m.getUltrasonic(), m.getAngles(), m.getSound(), m.getFront_light_sensors(), m.getShake(), m.getLight(), ConnectionType.CONNECTION_CLOSED, m.getIP());
 
             stream.write(mapper.writeValueAsBytes(deadConnection));
             stream.flush();
@@ -274,5 +269,13 @@ public class Server {
         }
 
         return INSTANCE;
+    }
+
+    public static boolean GetAutoPilot(){
+        return autoPilot;
+    }
+
+    public static MbotDTO GetLastPackage(){
+        return lastPackage;
     }
 }

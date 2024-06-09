@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace MBotController.Models
 {
+    /// <summary>
+    /// Represents the current status of the MBot.
+    /// </summary>
     internal enum ConnectionType
     {
         CONNECTION_CLOSED,

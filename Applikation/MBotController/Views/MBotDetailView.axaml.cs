@@ -44,13 +44,35 @@ internal partial class MBotDetailView : UserControl
         Handle.PointerPressed += Canvas_PointerPressed;
         Handle.PointerReleased += Canvas_PointerReleased;
         Handle.PointerMoved += Canvas_PointerMoved;
+
+        MBotService.Instance.Reset += Reset;
     }
 
+    /// <summary>
+    /// Changes to the LandingView when program is reset.
+    /// </summary>
+    /// <param name="s"></param>
+    /// <param name="e"></param>
+    public void Reset(object s, EventArgs e)
+    {
+        this.Content = new MBotLandingView();
+    }
+
+    /// <summary>
+    /// Gets and returns the light color at index <paramref name="i"/>.
+    /// </summary>
+    /// <param name="i">Index of the light color</param>
+    /// <returns>light color at <paramref name="i"/></returns>
     public IBrush LightColorAtIndex(int i)
     {
         return (this.DataContext as MBotDetailViewModel).Bot.LightColors[i];
     }
 
+    /// <summary>
+    /// Sends the command to the server.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     public void sendCommand(object sender, KeyEventArgs e)
     {
         var context = this.DataContext as MBotDetailViewModel;
@@ -79,6 +101,11 @@ internal partial class MBotDetailView : UserControl
         MBotService.Instance.Command = cmd;
     }
 
+    /// <summary>
+    /// Changes page to LandingView
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private void HomeBtnClick(object sender, RoutedEventArgs e)
     {
         this.Content = new MBotLandingView();
@@ -92,6 +119,11 @@ internal partial class MBotDetailView : UserControl
         }
     }
 
+    /// <summary>
+    /// Calculates current Pointer position and sends the coordinates to the server.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private void Canvas_PointerMoved(object sender, PointerEventArgs e)
     {
         if (handleStartPosition.HasValue)
@@ -123,6 +155,11 @@ internal partial class MBotDetailView : UserControl
         }
     }
 
+    /// <summary>
+    /// Called when the pointer is released and sends commmand to the server to stop the mbot.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private void Canvas_PointerReleased(object sender, PointerReleasedEventArgs e)
     {
         handleStartPosition = null;
@@ -132,14 +169,23 @@ internal partial class MBotDetailView : UserControl
         MBotService.Instance.Command = new Command("0;0", context.Bot.IP);
     }
 
+    /// <summary>
+    /// Switch the autopilot mode.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     public void APBtnToggled(object sender, RoutedEventArgs e)
     {
         MBotService.Instance.SwitchAutoPilotMode((bool)apBtn.IsChecked);
     }
 
+    /// <summary>
+    /// Switch the suicide prevention mode.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     public void SPBtnToggled(object sender, RoutedEventArgs e)
     {
         MBotService.Instance.SwitchSuicidePreventionMode((bool)apBtn.IsChecked);
     }
-
 }

@@ -51,7 +51,6 @@ public class MbotController {
         return entities;
     }
 
-
     /**
      *  <h>Get Data from MBOT. Every 25th item will be saved in the database. All of these will be directed to the Client</h>
      * @param item Sensordata object from MBOT

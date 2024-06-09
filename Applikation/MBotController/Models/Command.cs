@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace MBotController.Models
 {
+    /// <summary>
+    /// The command which is sent to the mbot.
+    /// </summary>
     internal class Command
     {
         [JsonPropertyName("name")]
