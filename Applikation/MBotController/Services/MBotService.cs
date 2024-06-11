@@ -33,21 +33,18 @@ namespace MBotController.Services
         public TcpClient TcpClient { get; set; }
         public Thread Thread { get; set; }
         public event EventHandler Reset;
-        //TODO: Get MBots from server, otherwise use test data for debug purposes
 
         private MBotService()
         {
             MBots = new List<MBot>();
 
             this.SetItems();
-
-            SendCommand();
         }
 
         /// <summary>
         /// Makes broadcast and set all the mbots.
         /// </summary>
-        private /*async*/ void SetItems()
+        private async void SetItems()
         {
 
             /*MBots = new List<MBot>()
@@ -66,15 +63,10 @@ namespace MBotController.Services
             {
                 while (true)
                 {
-                    // Sends a message to the host to which you have connected.
                     byte[] sendBytes = Encoding.UTF8.GetBytes("ACC");
-
                     udpClient.Send(sendBytes, sendBytes.Length, IPAddress.Broadcast.ToString(), 5595);
 
-                    //IPEndPoint object will allow us to read datagrams sent from any source.
-                    IPEndPoint RemoteIpEndPoint = null;// new IPEndPoint(IPAddress.Any, 5595);
-
-                    // Blocks until a message returns on this socket from a remote host.    
+                    IPEndPoint RemoteIpEndPoint = null;
                     byte[] receiveBytes = udpClient.Receive(ref RemoteIpEndPoint);
                     string returnData = Encoding.ASCII.GetString(receiveBytes);
 
@@ -84,10 +76,6 @@ namespace MBotController.Services
                         IP = RemoteIpEndPoint.Address.ToString();
                         Port = RemoteIpEndPoint.Port;
                         break;
-                    }
-                    else
-                    {
-                        //No success
                     }
 
                     Thread.Sleep(1000);
@@ -104,6 +92,7 @@ namespace MBotController.Services
 
             HttpClient client = new HttpClient();
             string json = client.GetStringAsync($"http://{IP}:8080/api/mbots").Result;
+
             JsonSerializerOptions options = new JsonSerializerOptions();
             options.PropertyNameCaseInsensitive = true;
             options.Converters.Add(new JsonStringEnumConverter());
@@ -117,6 +106,8 @@ namespace MBotController.Services
                 mbot.CalcLightColors().Wait();
                 mbot.RandomColor();
             }
+
+            SendCommand();
 
             TcpClient = new TcpClient();
             TcpClient.Connect(IPAddress.Parse(IP), 5000);
@@ -183,10 +174,23 @@ namespace MBotController.Services
                 }
                 catch (SocketException ex)
                 {
-                    await Console.Out.WriteLineAsync("lost connection");
-                    Reset?.Invoke(this, EventArgs.Empty);
-                    _instance = new MBotService();
-                    return;
+                    await Dispatcher.UIThread.InvokeAsync(async () =>
+                    {
+                        await Console.Out.WriteLineAsync("lost connection");
+                        Reset?.Invoke(this, EventArgs.Empty);
+                        _instance = new MBotService();
+                        return;
+                    });
+                }
+                catch (IOException ex)
+                {
+                    await Dispatcher.UIThread.InvokeAsync(async () =>
+                    {
+                        await Console.Out.WriteLineAsync("lost connection");
+                        Reset?.Invoke(this, EventArgs.Empty);
+                        _instance = new MBotService();
+                        return;
+                    });
                 }
             }
         }
