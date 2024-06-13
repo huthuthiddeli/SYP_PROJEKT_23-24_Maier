@@ -270,12 +270,4 @@ public class Server {
 
         return INSTANCE;
     }
-
-    public static boolean GetAutoPilot(){
-        return autoPilot;
-    }
-
-    public static MbotDTO GetLastPackage(){
-        return lastPackage;
-    }
 }

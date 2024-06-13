@@ -6,6 +6,7 @@ public class Command {
     private String name;
     private String socket;
 
+    public Command(){}
 
     public Command(String name, String socket) {
         this.name = name;
