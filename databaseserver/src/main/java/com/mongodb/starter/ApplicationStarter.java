@@ -2,7 +2,6 @@ package com.mongodb.starter;
 
 import com.mongodb.starter.Networking.BroadcastServer;
 import com.mongodb.starter.Networking.Server;
-import com.mongodb.starter.Networking.UDP_Server;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -29,18 +28,8 @@ public class ApplicationStarter {
             Server.getServer().RUN();
         });
 
-        Thread UDP_SERVER = new Thread(() ->{
-            try{
-                Thread.sleep(2000);
-            }catch (InterruptedException ex){
-                throw new RuntimeException(ex);
-            }
-            UDP_Server.GetInstance().RUN();
-        });
-
         server.start();
         broadcast.start();
-        UDP_SERVER.start();
 
         SpringApplication.run(ApplicationStarter.class, args);
     }

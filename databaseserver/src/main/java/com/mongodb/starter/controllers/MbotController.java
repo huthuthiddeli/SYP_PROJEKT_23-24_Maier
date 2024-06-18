@@ -5,12 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.starter.ConnectionType;
 import com.mongodb.starter.Networking.BroadcastServer;
 import com.mongodb.starter.Networking.Server;
-import com.mongodb.starter.Networking.UDP_Server;
 import com.mongodb.starter.dtos.MbotDTO;
 import com.mongodb.starter.models.Command;
-import com.mongodb.starter.services.ActualMbotService;
-import com.mongodb.starter.models.MbotEntity;
-import com.mongodb.starter.services.ActualService;
+import com.mongodb.starter.services.MbotService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,17 +23,15 @@ import java.util.*;
 public class MbotController {
 
     public final static Logger LOGGER = LoggerFactory.getLogger(MbotController.class);
-    private final ActualMbotService mbotService;
+    private final MbotService mbotService;
     private final ObjectMapper mapper = new ObjectMapper();
     private final Server server = Server.getServer();
-    private final UDP_Server udp_server = UDP_Server.GetInstance();
-
-
 
     private int counter = 0;
+    private boolean SUICIDE_PREVENTION = false;
 
 
-    public MbotController(ActualMbotService mbotService) {
+    public MbotController(MbotService mbotService) {
 
         this.mbotService = mbotService;
     }
@@ -51,14 +46,13 @@ public class MbotController {
         return entities;
     }
 
+
     /**
      *  <h>Get Data from MBOT. Every 25th item will be saved in the database. All of these will be directed to the Client</h>
      * @param item Sensordata object from MBOT
      * @throws JsonProcessingException Because of mapping?
      * @throws IOException Socketproblems
      */
-
-
     @PostMapping("/mbot/Data")
     @ResponseStatus(HttpStatus.OK)
     public @ResponseBody MbotDTO postData(@RequestBody MbotDTO item) throws JsonProcessingException, IOException {
@@ -79,28 +73,6 @@ public class MbotController {
         }
         return null;
     }
-    
-    @PostMapping("/mbot/test")
-    @ResponseStatus(HttpStatus.OK)
-    public @ResponseBody MbotDTO test(@RequestBody MbotDTO item) {
-        try {
-
-            //LOGGER.info("[MBOTController]\t:" + item.toString());
-            LOGGER.info("[MbotController]\tData receivied!");
-            mbotService.save(item);
-            counter = 0;
-
-
-        } catch (IllegalArgumentException e) {
-            LOGGER.error("error: " + e.getMessage());
-        } catch (Exception ex){
-        }finally {
-            counter++;
-        }
-        return null;
-    }
-
-
 
     @PostMapping("/mbot/DataUDP")
     @ResponseStatus(HttpStatus.OK)
@@ -126,6 +98,7 @@ public class MbotController {
     }
 
 
+    //ROUTE USED BY THE CLIENT TO SEND COMMANDS TO THE MBOT
     @PostMapping("/mbot/commandQueue")
     @ResponseStatus(HttpStatus.OK)
     public @ResponseBody boolean getCommandQueueUDP(@RequestBody Command command) {
@@ -139,10 +112,6 @@ public class MbotController {
             if(server.SendCommandToClient(command)){
                 return false;
             }
-
-            if(!udp_server.SendCommand(command)){
-                return false;
-            }
         }catch (Exception ex){
             LOGGER.error("[MBOTCONTROLLER]\tCommandquqeue: " +ex.getMessage());
         }
@@ -150,6 +119,7 @@ public class MbotController {
         return true;
     }
 
+    //GET A LIST OF ALL ACTIVE MBOTS OR A TEST MBOT
     @GetMapping("/mbots")
     @ResponseStatus(HttpStatus.OK)
     public @ResponseBody String getActiveMbots() throws JsonProcessingException {
@@ -187,6 +157,17 @@ public class MbotController {
 
         return mapper.writeValueAsString(list);
     }
+
+    @GetMapping("/toggle-suicide")
+    public boolean toggleSuicideMode(Command command){
+
+        if(server.SendSuicideToggle(command, SUICIDE_PREVENTION)){
+            SUICIDE_PREVENTION = !SUICIDE_PREVENTION;
+        }
+
+        return SUICIDE_PREVENTION;
+    }
+
 
     @DeleteMapping("/mbots/sure")
     public void deleteCars() {
