@@ -14,34 +14,63 @@ namespace MBotController.Models
     /// <summary>
     /// Class representing the MBot.
     /// </summary>
-    internal class MBot
+    partial class MBot : ObservableObject
     {
         [JsonIgnore]
-        public static int Count { get; set; } = 0;
+        [ObservableProperty]
+        private static int _count = 0;
+
+        // Other properties refactored using [ObservableProperty]
+
         [JsonIgnore]
-        public int? ID { get; set; }
-        public string IP { get; set; }
+        [ObservableProperty]
+        private int? _id;
+
+        [ObservableProperty]
+        private string _ip;
+
         [JsonIgnore]
-        public string Name { get; set; }
+        [ObservableProperty]
+        private string _name;
+
         [JsonIgnore]
-        public int Velocity { get; set; } = 0;
-        public double Ultrasonic { get; set; } = 0;
-        public List<int> Angles { get; set; } = new List<int>();
-        public int Sound { get; set; } = 0;
+        [ObservableProperty]
+        private int _velocity = 0;
+
+        [ObservableProperty]
+        private double _ultrasonic = 0;
+
+        [ObservableProperty]
+        private List<int> _angles = new List<int>();
+
+        [ObservableProperty]
+        private int _sound = 0;
+
         [JsonPropertyName("front_light_sensors")]
-        public int[] LightSensors { get; set; } = new int[4];
+        [ObservableProperty]
+        private int[] _lightSensors = new int[4];
+
         [JsonIgnore]
-        public IBrush[] LightColors { get; set; } = new IBrush[4];
-        public int Shake { get; set; } = 0;
-        public int Light { get; set; } = 0;
+        [ObservableProperty]
+        private IBrush[] _lightColors = new IBrush[4];
+
+        [ObservableProperty]
+        private int _shake = 0;
+
+        [ObservableProperty]
+        private int _light = 0;
+
         [JsonIgnore]
-        public IBrush BackgroundColor { get; private set; }
-        public ConnectionType Type { get; set; }
+        [ObservableProperty]
+        private IBrush _backgroundColor;
+
+        [ObservableProperty]
+        private ConnectionType _type;
 
         public MBot()
         {
             this.Name = "MBot " + Count;
-            this.ID = Count;
+            this.Id = Count;
             Count++;
 
             //this.CalcLightColors();
@@ -49,9 +78,9 @@ namespace MBotController.Models
 
         public MBot(string IP, int velocity) : this()
         {
-            this.IP = IP;
+            this.Ip = IP;
             this.Name = "MBot " + Count;
-            this.ID = Count;
+            this.Id = Count;
             Count++;
             this.Velocity = velocity;
         }
@@ -68,7 +97,7 @@ namespace MBotController.Models
 
         public MBot(string ip, int velocity, double ultrasonic, List<int> angles, int sound, int[] lightSensors, int shake, int light, ConnectionType type) : this()
         {
-            this.IP = ip;
+            this.Ip = ip;
             this.Velocity = velocity;
             this.Ultrasonic = ultrasonic;
             this.Angles = angles;

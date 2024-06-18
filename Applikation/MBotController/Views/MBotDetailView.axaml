@@ -24,7 +24,7 @@
 			<Border Grid.Column="0" Margin="0" CornerRadius="0,0,15,0">
 				<StackPanel>
 					<Label Content="{ Binding Path=Bot.Name }"/>
-					<Label Content="{ Binding Path=Bot.IP }"/>
+					<Label Content="{ Binding Path=Bot.Ip }"/>
 				</StackPanel>
 			</Border>
 

@@ -72,7 +72,6 @@ namespace MBotController.Services
 
                     if (returnData == "ACCACK")
                     {
-                        //Success
                         IP = RemoteIpEndPoint.Address.ToString();
                         Port = RemoteIpEndPoint.Port;
                         break;
@@ -153,16 +152,23 @@ namespace MBotController.Services
 
                     // Read the first batch of the TcpServer response bytes.
                     int bytes = stream.Read(data, 0, data.Length);
-                    json = Encoding.ASCII.GetString(data, 0, bytes);
+                    json = Encoding.UTF8.GetString(data, 0, bytes);
 
                     JsonSerializerOptions options = new JsonSerializerOptions();
                     options.PropertyNameCaseInsensitive = true;
                     options.Converters.Add(new JsonStringEnumConverter());
-                    MBot? bot = JsonSerializer.Deserialize<MBot>(json, options);
+                    await Console.Out.WriteLineAsync(json);
+
+                    if (!json.Contains("!"))
+                    {
+                        continue;
+                    }
+
+                    MBot? bot = JsonSerializer.Deserialize<MBot>(json.Split("!")[0], options);
 
                     if (bot is not null)
                     {
-                        MBot? curr = MBots.Find(m => m.IP == "/" + bot.IP);
+                        MBot? curr = MBots.Find(m => m.Ip == "/" + bot.Ip);
 
                         if (curr is not null)
                         {
@@ -171,6 +177,10 @@ namespace MBotController.Services
                     }
 
                     Thread.Sleep(100);
+                }
+                catch (JsonException ex)
+                {
+                    Console.WriteLine(ex.Message);
                 }
                 catch (SocketException ex)
                 {

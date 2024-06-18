@@ -21,10 +21,10 @@
 			</ItemsControl.ItemsPanel>
 			<ItemsControl.ItemTemplate>
 				<DataTemplate>
-					<Border x:Name="{Binding ID}" PointerPressed="Border_PointerPressed" BorderBrush="Black" BorderThickness="2" Margin="5" CornerRadius="5">
+					<Border x:Name="{Binding Id}" PointerPressed="Border_PointerPressed" BorderBrush="Black" BorderThickness="2" Margin="5" CornerRadius="5">
 						<StackPanel Background="{Binding BackgroundColor}">
 							<Label Content="{Binding Name}"/>
-							<Label Content="{Binding IP}"/>
+							<Label Content="{Binding Ip}"/>
 							<DockPanel>
 								<Label DockPanel.Dock="Left" Content="Velocity:"/>
 								<Label DockPanel.Dock="Right" Content="{Binding Velocity}"/>

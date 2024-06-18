@@ -7,6 +7,8 @@ import com.mongodb.starter.models.Command;
 import com.mongodb.starter.models.MbotEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
+
 import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -104,7 +106,7 @@ public class Server {
         return true;
     }
 
-
+    @Scheduled(fixedDelay = 1000)
     public boolean SendSensorDataToClient(MbotEntity m) throws NullPointerException, InterruptedException, IOException {
         Thread.sleep(1000);
 
@@ -120,7 +122,7 @@ public class Server {
                     LOGGER.info("[SERVER]\t\t\tThere was no client registered!");
                     counter = 0;
                 }else if(counter > 12){
-                    LOGGER.info("[SERVER]\t\t\tData sent to: " + s.getInetAddress().toString());
+                    LOGGER.info("[SERVER]\t\t\tData sent to not existing client!");
                 }else{
                     counter++;
                 }
@@ -129,7 +131,7 @@ public class Server {
             }
 
             stream = s.getOutputStream();
-            
+
             m = new MbotDTO(
                     m.getUltrasonic(),
                     m.getAngles(),
@@ -139,26 +141,25 @@ public class Server {
                     m.getLight(),
                     ConnectionType.CONNECTION_ALIVE,
                     m.getIP()
-                )   
-                .toMbotEntity();
+            )
+                    .toMbotEntity();
 
             stream.write(mapper.writeValueAsBytes(m));
             stream.flush();
 
         } catch (IOException e) {
-
-            BroadcastServer.ResetClient();
             System.out.println("Client is not alive: " + e.getMessage());
-            LOGGER.error("[SERVER]\t\t\t Error sending data to client (SensordatatTOClient): " + e.getMessage());
+            LOGGER.error("[SERVER]\t\t\tError sending data to client (SensordatatTOClient): " + e.getMessage());
             return false;
         } catch(Exception ex){
-            LOGGER.error("[SERVER]\t\t\t Critical error occured!");
+            LOGGER.error("[SERVER]\t\t\tCritical error occured!");
+
+            return false;
         }
 
 
         return true;
     }
-
 
 
     private void IsStillConnected() throws IOException {

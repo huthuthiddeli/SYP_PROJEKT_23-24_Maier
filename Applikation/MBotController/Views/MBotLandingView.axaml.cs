@@ -35,7 +35,7 @@ public partial class MBotLandingView : UserControl
         int id = Convert.ToInt32(((Border)sender).Name);
 
         MBotLandingViewModel model = this.DataContext as MBotLandingViewModel;
-        MBot bot = model.MBots.Find(bot1 => bot1.ID == id);
+        MBot bot = model.MBots.Find(bot1 => bot1.Id == id);
         this.Content = new MBotDetailView(bot);
     }
 }
