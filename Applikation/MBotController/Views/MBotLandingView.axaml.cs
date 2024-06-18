@@ -25,6 +25,11 @@ public partial class MBotLandingView : UserControl
         }
     }
 
+    /// <summary>
+    /// Changes to the MBotDetailView when an mbot is selected.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="args"></param>
     private void Border_PointerPressed(object sender, PointerPressedEventArgs args)
     {
         int id = Convert.ToInt32(((Border)sender).Name);

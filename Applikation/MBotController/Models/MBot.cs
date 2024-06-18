@@ -81,21 +81,33 @@ namespace MBotController.Models
             this.CalcLightColors().Wait();
         }
 
+        /// <summary>
+        /// Generates a light background color.
+        /// </summary>
         public void RandomColor()
         {
+            int minVal = 128; // Minimum value to ensure light colors
+            int maxVal = 256; // Maximum value for RGB components
+
+            Func<byte> getRandomLightByte = () => (byte)Random.Shared.Next(minVal, maxVal);
+
             if (Dispatcher.UIThread.CheckAccess())
             {
-                this.BackgroundColor = new SolidColorBrush(Color.FromRgb((byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256)));
+                this.BackgroundColor = new SolidColorBrush(Color.FromRgb(getRandomLightByte(), getRandomLightByte(), getRandomLightByte()));
             }
             else
             {
                 Dispatcher.UIThread.InvokeAsync(() =>
                 {
-                    this.BackgroundColor = new SolidColorBrush(Color.FromRgb((byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256), (byte)Random.Shared.Next(256)));
+                    this.BackgroundColor = new SolidColorBrush(Color.FromRgb(getRandomLightByte(), getRandomLightByte(), getRandomLightByte()));
                 });
             }
         }
 
+        /// <summary>
+        /// Calculates the light sensor colors from the data received from the server.
+        /// </summary>
+        /// <returns>Awaitable task.</returns>
         public async Task CalcLightColors()
         {
             for (int i = 0; i < 4; i++)
@@ -109,6 +121,10 @@ namespace MBotController.Models
             }
         }
 
+        /// <summary>
+        /// Copies the values of another mbot into this mbot.
+        /// </summary>
+        /// <param name="bot">The bot to copy the data from.</param>
         public void Copy(MBot bot)
         {
             this.Velocity = bot.Velocity;
@@ -119,7 +135,7 @@ namespace MBotController.Models
             this.Light = bot.Light;
             this.Shake = bot.Shake;
 
-            this.CalcLightColors();
+            this.CalcLightColors().Wait();
         }
     }
 }

@@ -111,6 +111,11 @@ internal partial class MBotDetailView : UserControl
         this.Content = new MBotLandingView();
     }
 
+    /// <summary>
+    /// Changed the pointer position
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private void Canvas_PointerPressed(object sender, PointerPressedEventArgs e)
     {
         if (Handle.IsPointerOver)
